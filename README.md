@@ -1,2 +1,4 @@
 # VCGs
-Formalization of Vickrey-Clarke-Groves auctions and mechanism.
+A formalization project for General VCG and of VCG for Search and their properties.
+
+See file header for proper description.

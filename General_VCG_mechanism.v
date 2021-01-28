@@ -290,12 +290,10 @@ have eq_Sum_i : bidSum_i i bs  =1 bidSum_i i bs'.
   by move: diff => ->.
 rewrite /price /welfare_without_i /welfare_with_i.
 rewrite (@eq_bigr _ _ _ _ _ _ (bidSum_i i bs) (bidSum_i i bs')) //.
-rewrite ?2!subnBA ?leq_sub2r //.
-rewrite -2!value_is_bid -eq_Sum_i //.
-rewrite -2!bidSumD1 /('o* bs) -bigmax_eq_arg => //.
-by apply: bigmax_sup.
-rewrite eq_Sum_i.
+rewrite ?2!subnBA ?leq_sub2r //; last by exact: bigmax_sup.
+rewrite -2!value_is_bid -eq_Sum_i -2!bidSumD1 /('o* bs) -bigmax_eq_arg //.
 exact: bigmax_sup.
+rewrite eq_Sum_i. 
 exact: bigmax_sup.
 Qed.
 

@@ -59,6 +59,46 @@ have f: (b1 - b2) * (c1 - c2) = b1 * c1 + b2 * c2 - (b1 * c2 + b2 * c1).
   by rewrite -subn_gt0 -f muln_gt0 2!subn_gt0 ltb2b1 ltc2c1.
 Qed.
 
+Lemma sum_predT m (F : 'I_(m.+1) -> nat) :
+  \sum_(j < m.+1) F j = \sum_(j < m.+1 | predT j) F j.
+Proof. by []. Qed.
+
+Lemma reindex_ge_i (i : A) m (F : 'I_m.+1 -> nat) :
+  0 < m ->
+    i < last_ord m ->
+      \sum_(s < m.+1 | i < s) F s =
+        \sum_(s < m.+1 | i <= s < m) F (ord_succ s).
+Proof.
+move=> lt0m ltil.
+rewrite (bigD1 ord_max) //=.
+rewrite [in RHS](bigD1 (ord_pred ord_max)) //=; last first.
+apply/andP. split; last by rewrite ltn_predL.
+rewrite -ltnS (ltn_predK lt0m); first by exact: ltil.
+rewrite cancel_ord_pred //=; last first.
+congr (_ + _).
+pose P := fun s : 'I_m.+1 => (i < s) && (s != ord_max).
+rewrite (@reindex_onto _ _ _ _ _
+    (@ord_succ m) (@ord_pred m.+1) P) //=; last first. 
+- move=> s /andP [ltis nesx].
+  rewrite cancel_ord_pred //.
+  exact: (leq_ltn_trans (leq0n i)).
+- apply: eq_bigl => s.
+  rewrite /P below_last_ord //=.
+  case: s => [s' p] /=.
+  rewrite -![X in _ = _ && ~~ X](inj_eq val_inj) /=.
+  - case eqs'm: (s' == m).
+    rewrite ltnn andbF andFb.
+    move: eqs'm => /eqP ->.
+    by rewrite ltnn andbF andFb.
+  - rewrite cancel_ord_succ //= ?eqxx ?andbT.
+    rewrite ltnS -ltn_predRL.
+    rewrite -andbA [X in _ = _ && X]andbC.
+    rewrite -(@prednK m lt0m) ltnS.
+    by rewrite -ltn_neqAle.
+  move: eqs'm p; rewrite ltnS leq_eqVlt => ->.
+  by rewrite orFb.
+Qed.
+
 Lemma big_split_subn k (P : 'I_k -> bool) F1 F2
       (H : forall s : 'I_k, P s -> F2 s <= F1 s) :
   \sum_(s < k | P s) (F1 s - F2 s) =

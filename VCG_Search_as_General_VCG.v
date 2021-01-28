@@ -59,10 +59,6 @@ have f: (b1 - b2) * (c1 - c2) = b1 * c1 + b2 * c2 - (b1 * c2 + b2 * c1).
   by rewrite -subn_gt0 -f muln_gt0 2!subn_gt0 ltb2b1 ltc2c1.
 Qed.
 
-Lemma sum_predT m (F : 'I_(m.+1) -> nat) :
-  \sum_(j < m.+1) F j = \sum_(j < m.+1 | predT j) F j.
-Proof. by []. Qed.
-
 Lemma reindex_ge_i (i : A) m (F : 'I_m.+1 -> nat) :
   0 < m ->
     i < last_ord m ->
@@ -838,8 +834,7 @@ Definition bidSum_i := @VCG.bidSum_i O_finType i (biddings bs).
 Lemma bidSum_i_bid_ctr_agent : bidSum_i oStar = bidSum oStar - bid_ctr_agent i.
 Proof.
 rewrite /bidSum_i /VCG.bidSum_i /bidSum /VCG.bidSum.
-pose bid j :=  tnth (biddings bs) j oStar.
-move: (sum_predT bid) => ->.
+pose bid j :=  tnth (biddings bs) j oStar. 
 rewrite [X in _ = X - _](bigD1 i) => //=.
 rewrite addnC -[X in X = _]addn0 -addnBA.
 congr (_ + _). 
@@ -1673,8 +1668,8 @@ Lemma s_welfare_without_i'' :
     \sum_(s < k | i <= s) 'bid_(agent_succ (slot_as_agent s)) * 'ctr_s.
 Proof.
 rewrite eq_welfare_without_i''_bidSum' /bidSum' /VCG.bidSum. 
-rewrite sum_predT bidsSum_sumBid -valid_bidSum bidSum_slot.
-rewrite sum_predT (bigID (fun s : slot => s < i)) //=.
+rewrite bidsSum_sumBid -valid_bidSum bidSum_slot.
+rewrite (bigID (fun s : slot => s < i)) //=.
 congr (_ + _ ).
 - rewrite (eq_bigr (bid_ctr_slot bs)) //= => s ltsi.
   rewrite /bidding ffunE /t_bidding.

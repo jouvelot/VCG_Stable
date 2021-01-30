@@ -107,8 +107,7 @@ Qed.
 
 Lemma cancel_ord_pred m (s : 'I_m.+1) : 0 < s -> ord_succ (ord_pred s) = s.
 Proof.
-move: s => [s p] /=.
-move=> lt0s.
+move: s => [s p] /= lt0s.
 apply: ord_inj => //=.
 rewrite prednK //. 
 have/ltn_eqF -> //: s.-1 < m.
@@ -121,8 +120,7 @@ Definition last_ord m := Ordinal (ltnSn m).
 Lemma cancel_ord_succ m (s : 'I_m.+1) :
   s < last_ord m -> ord_pred (ord_succ s) = s.
 Proof.
-move: s => [s p] /=.
-move=> ltsm. 
+move: s => [s p] /= ltsm. 
 apply: ord_inj => //=.
 by move/ltn_eqF: ltsm => ->.
 Qed.
@@ -133,12 +131,7 @@ Lemma big_cropr m F (i : nat) :
 Proof. by apply: eq_bigl => s; rewrite below_last_ord. Qed.
 
 Lemma sum0_gt_last m (F : 'I_m.+1 -> nat) : \sum_(s < m.+1 | m < s) F s = 0.
-Proof.
-rewrite (@eq_bigl _ _ _ _ _ (fun s : 'I_m.+1 => m < s) xpred0) => [|s].
-by rewrite big_pred0_eq. 
-apply: negbTE.
-by rewrite -leqNgt (leq_ord s). 
-Qed.
+Proof. apply: big_pred0 => s; exact: (leq_gtF (leq_ord s)). Qed.
 
 End Ordinal.
 
@@ -291,9 +284,10 @@ have eq_Sum_i : bidSum_i i bs  =1 bidSum_i i bs'.
 rewrite /price /welfare_without_i /welfare_with_i.
 rewrite (@eq_bigr _ _ _ _ _ _ (bidSum_i i bs) (bidSum_i i bs')) //.
 rewrite ?2!subnBA ?leq_sub2r //; last by exact: bigmax_sup.
-rewrite -2!value_is_bid -eq_Sum_i -2!bidSumD1 /('o* bs) -bigmax_eq_arg //.
-exact: bigmax_sup.
-rewrite eq_Sum_i. 
+rewrite -2!value_is_bid -eq_Sum_i //.
+rewrite -2!bidSumD1 /('o* bs) -bigmax_eq_arg => //.
+by apply: bigmax_sup.
+rewrite eq_Sum_i.
 exact: bigmax_sup.
 Qed.
 

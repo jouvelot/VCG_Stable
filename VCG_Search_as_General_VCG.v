@@ -107,8 +107,7 @@ Qed.
 
 Lemma cancel_ord_pred m (s : 'I_m.+1) : 0 < s -> ord_succ (ord_pred s) = s.
 Proof.
-move: s => [s p] /=.
-move=> lt0s.
+move: s => [s p] /= lt0s.
 apply: ord_inj => //=.
 rewrite prednK //. 
 have/ltn_eqF -> //: s.-1 < m.
@@ -120,10 +119,9 @@ Definition last_ord m := Ordinal (ltnSn m).
 
 Lemma cancel_ord_succ m (s : 'I_m.+1) :
   s < last_ord m -> ord_pred (ord_succ s) = s.
-Proof.
-move: s => [s p] /=.
-move=> ltsm. 
-apply: ord_inj => //=.
+Proof. 
+move: s => [s p] /= ltsm. 
+apply: ord_inj => //=. 
 by move/ltn_eqF: ltsm => ->.
 Qed.
 

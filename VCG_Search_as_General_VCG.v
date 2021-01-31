@@ -59,6 +59,9 @@ have f: (b1 - b2) * (c1 - c2) = b1 * c1 + b2 * c2 - (b1 * c2 + b2 * c1).
   by rewrite -subn_gt0 -f muln_gt0 2!subn_gt0 ltb2b1 ltc2c1.
 Qed.
 
+Definition singleton (T : eqType) (P : T -> Type) :=
+  forall (x y : T), P x -> P y -> x = y.
+
 Lemma reindex_ge_i (i : A) m (F : 'I_m.+1 -> nat) :
   0 < m ->
     i < last_ord m ->
@@ -863,10 +866,8 @@ Proof. by rewrite (bigD1 i). Qed.
 
 End BidSum.
 
-Hypothesis eq_VCG_oStar_oStar : 
-  forall bs, max_bidSum_spec bs (VCG_oStar bs) ->
-        max_bidSum_spec bs oStar ->
-        VCG_oStar bs = oStar.
+Hypothesis max_bidSum_singleton :
+  forall bs, singleton (max_bidSum_spec bs).
 
 (* VCG for Search, as a case of General VCG. *)
    
@@ -1005,7 +1006,7 @@ Lemma s_welfare_with_i :
 Proof.
 rewrite /welfare_with_i /VCG.welfare_with_i /VCG.bidSum_i.
 rewrite -/(VCG_oStar bs). 
-rewrite (eq_VCG_oStar_oStar (VCG_oStar_extremum bs) (oStar_extremum sorted_bs)).
+rewrite (max_bidSum_singleton (VCG_oStar_extremum bs) (oStar_extremum sorted_bs)).
 rewrite (bidsSum_sumBid (fun j => j != i)).
 apply/eqP; rewrite -(eqn_add2l (bidding bs i oStar)); apply/eqP.
 rewrite -s_bidSumD1 -valid_bidSum /bidding ffunE /t_bidding.
@@ -1813,7 +1814,7 @@ Lemma bid_in_oStar (value_bs : value_is_bid_for_bids) :
 Proof. 
 rewrite /bidding ffunE /t_bidding.
 rewrite -/(VCG_oStar bs). 
-rewrite (eq_VCG_oStar_oStar (VCG_oStar_extremum bs) (oStar_extremum sorted_bs)).
+rewrite (max_bidSum_singleton (VCG_oStar_extremum bs) (oStar_extremum sorted_bs)).
 by rewrite ifT.
 Qed.
 

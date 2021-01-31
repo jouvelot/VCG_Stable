@@ -247,9 +247,8 @@ Hypothesis value_is_bid : 'bidding_i = value.
 Lemma rational : price <= value oStar.
 Proof.
 rewrite -value_is_bid leq_subLR addnC -bidSumD1 -bigmax_eq_arg //.
-have rebate_ge0 o : bidSum_i o <= bidSum o.
-  by rewrite (bidSumD1 o) leq_addl.
-exact: max_monotonic.
+apply: max_monotonic => o.
+by rewrite (bidSumD1 o) leq_addl.
 Qed.
 
 End Mechanism.
@@ -276,7 +275,7 @@ Theorem truthful bs' :
 Proof.
 move=> value_is_bid diff.
 rewrite /utility /price.
-have eq_Sum_i : bidSum_i i bs  =1 bidSum_i i bs'.
+have eq_Sum_i : bidSum_i i bs =1 bidSum_i i bs'.
   move=> o.
   apply: eq_bigr => j jnoti.
   rewrite /differ_only_i in diff.

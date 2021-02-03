@@ -137,8 +137,7 @@ Lemma tnth_uniq (T : eqType) m (x : T) (t : m.+1.-tuple T) i j :
   uniq t → (tnth t i == tnth t j) = (i == j).
 Proof.
 move=> ut.
-rewrite !(tnth_nth x) ?nth_uniq //.
-by rewrite size_tuple ltn_ord.
+rewrite !(tnth_nth x) ?nth_uniq //; last by rewrite size_tuple ltn_ord.
 by rewrite size_tuple ltn_ord.
 Qed.
 

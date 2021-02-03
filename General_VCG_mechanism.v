@@ -29,13 +29,17 @@
 
 *)
 
+(* 
+
 From Coq Require Import Init.Prelude Unicode.Utf8.
 From mathcomp Require Import all_ssreflect.
-From mathcomp Require Import fingroup.perm.
+From mathcomp Require Import fingroup.perm. 
+
+*)
 
 Set Implicit Arguments.
 Unset Strict Implicit.
-Unset Printing Implicit Defensive.
+Unset Printing Implicit Defensive. 
 
 Section Aux.
 

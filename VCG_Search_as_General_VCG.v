@@ -151,17 +151,12 @@ Section Tuple_i.
 
 Variable (T : eqType) (i : A).
 
-Lemma tcast_tuple_i' m (lt_i_m : i < m) : i + (m - i.+1 +1) = m.
-Proof.
-have ->:  m - i.+1 + 1 = m - i by rewrite addn1 subnSK.
-rewrite addnBCA //; last by move/ltnW: lt_i_m.
-by rewrite subnn addn0.
-Qed.
-
 Lemma tcast_tuple_i m (lt_i_m : i < m) : minn i m + (m - i.+1 + 1) = m.
 Proof.
-move/ltnW/minn_idPl: (lt_i_m) => ->.
-exact: tcast_tuple_i'.
+move/ltnW/minn_idPl: (lt_i_m) => ->. 
+have -> :  m - i.+1 + 1 = m - i by rewrite addn1 subnSK.
+rewrite addnBCA //; last by move/ltnW: lt_i_m.
+by rewrite subnn addn0.
 Qed.
 
 Definition tuple_i m (t : m.-tuple T) (x : T) (lt_i_m : i < m) :=
@@ -178,9 +173,6 @@ have eqns1: m = (size t).-1 by rewrite size_tuple.
 rewrite [X in nth _ _ X]eqns1.
 exact: nth_last.
 Qed.
-
-Lemma eq_index_drop j (leij : i <= j) : i.+1 + (j - i) = j.+1.
-Proof. by rewrite addnC addnBAC -?addnBA // subSn ?subnn ?addn1. Qed.
 
 Lemma id_tuple_i m (t : m.-tuple T) (x : T) (lt_i_m : i < m) (j : 'I_m ) :
   j < i  -> tnth (tuple_i t x lt_i_m) j = tnth t j.
@@ -200,7 +192,8 @@ rewrite tcastE !(tnth_nth x) /=.
 rewrite nth_cat size_takel; last by rewrite size_tuple; move/ltnW: lt_i_m.
 rewrite leq_gtF // nth_cat size_drop size_tuple subnS ltn_predRL -subSn //.  
 rewrite ltn_sub2r ?nth_drop //; last first.
-move: (@eq_index_drop j) => -> //.
+have -> // : i.+1 + (j - i) = j.+1 
+  by rewrite addnC addnBAC -?addnBA // subSn ?subnn ?addn1. 
 by rewrite eq_proper_addS.
 Qed.
 

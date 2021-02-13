@@ -356,7 +356,7 @@ Hypothesis bubble_sort_spec : forall m m' (t : m.+1.-tuple 'I_m'.+1),
     let xo := bubble_sort t i1i2s in
     xo.1 /\ up_sorted_tuple xo.2. 
 
-(* VCG for Search algorithm *)
+(* VCG for Search *)
 
 Variable (k' : nat).
 Definition k := k'.+1.
@@ -1435,36 +1435,32 @@ move=> ltk'j.
 move: lt_i_k; rewrite ltnS => leik'.
 move/ltnW: (leq_ltn_trans leik' ltk'j) => leij.
 rewrite not_in_oStar //.
-- have [] := boolP (j < n') => ltjn'.
-  rewrite shifted_tuple_i // tnth_ord_tuple.
-  have -> //: (ord_succ j  \in bidders_of oStar_i) = false.
-    apply: negbTE.
-    rewrite -has_pred1 -all_predC. 
-    apply/all_tnthP => s /=.
-    rewrite neq_ltn; apply/orP; left.
-    have ltasj1: agent_succ (slot_as_agent s) < ord_succ j.
-      move/ltn_eqF: (lt_slot_n' s) => /= -> /=.
-      rewrite /= eq_proper_addS /= ltnS.
-      exact: leq_ltn_trans (leq_ord s) ltk'j.
-    by move: (leq_ltn_trans (lt_oStar_succ s) ltasj1).
+apply: esym.
+apply: negbTE.
+- have [] := boolP (j < n') => ltjn'. 
+  rewrite shifted_tuple_i // tnth_ord_tuple -has_pred1 -all_predC. 
+  apply/all_tnthP => s /=.
+  rewrite neq_ltn; apply/orP; left. 
+  have ltasj1: agent_succ (slot_as_agent s) < ord_succ j.
+    move/ltn_eqF: (lt_slot_n' s) => /= -> /=.
+    rewrite /= eq_proper_addS /= ltnS.
+    exact: leq_ltn_trans (leq_ord s) ltk'j.
+  by move: (leq_ltn_trans (lt_oStar_succ s) ltasj1).
 - move: ltjn'; rewrite -below_last_ord negbK => /eqP ->.
-  rewrite eq_lab'_last.
-  have -> // : (i \in bidders_of oStar_i) = false.
-    apply: negbTE.
-    rewrite -has_pred1 -all_predC. 
-    apply/all_tnthP => s /=.
-    - have [] := boolP (s < i) => ltsi.
-      by rewrite id_tuple_i // tnth_mktuple -(inj_eq val_inj) ltn_eqF.
-    - have [] := boolP (s < k') => ltsk'.
-      move: ltsi; rewrite -leqNgt => leis.
-      rewrite shifted_tuple_i // neq_ltn; apply/orP; right.
-      rewrite tnth_mktuple widen_slot_as_agent /=. 
-      by move: leis; rewrite -ltnS eq_proper_addS.
-    - move: ltsk'; rewrite -below_last_ord negbK => /eqP ->.
-      rewrite last_tuple_i -(inj_eq val_inj) /= inordK.
-      rewrite neq_ltn; apply/orP; right.
-      by rewrite ltnS.
-      exact: lt_k_n. 
+  rewrite eq_lab'_last -has_pred1 -all_predC. 
+  apply/all_tnthP => s /=.
+  - have [] := boolP (s < i) => ltsi.
+    by rewrite id_tuple_i // tnth_mktuple -(inj_eq val_inj) ltn_eqF.
+  - have [] := boolP (s < k') => ltsk'.
+    move: ltsi; rewrite -leqNgt => leis.
+    rewrite shifted_tuple_i // neq_ltn; apply/orP; right.
+    rewrite tnth_mktuple widen_slot_as_agent /=. 
+    by move: leis; rewrite -ltnS eq_proper_addS.
+  - move: ltsk'; rewrite -below_last_ord negbK => /eqP ->.
+    rewrite last_tuple_i -(inj_eq val_inj) /= inordK.
+    rewrite neq_ltn; apply/orP; right.
+    by rewrite ltnS.
+  exact: lt_k_n. 
 Qed.
 
 Ltac inord_in_oStar j := 
@@ -1684,8 +1680,8 @@ congr (_ + _ ).
   rewrite !tnth_mktuple.
   by move/widen_ord_inj => ->.
   have //=: ∃ i : 'I_k, tnth t_oStar s = tnth t_oStar i by exists s.
-rewrite shifted_tuple_i tnth_mktuple -?widen_slot_as_agent //=.
-exact: lt_slot_n'.
+  rewrite shifted_tuple_i tnth_mktuple -?widen_slot_as_agent //=.
+  exact: lt_slot_n'.
 Qed.
 
 (* VCG for Search price. *)

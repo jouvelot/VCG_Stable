@@ -1606,9 +1606,9 @@ Definition bidSum' := @VCG.bidSum O_finType (biddings bs').
 Lemma eq_welfare_without_i''_bidSum' : welfare_without_i'' = bidSum' oStar.
 Proof.
 rewrite /welfare_without_i'' /VCG.welfare_without_i'' /bidSum'.
-rewrite (@bigmax_eq_arg _ o0 _ (fun o => VCG.bidSum'' i (biddings bs) o)) //.
+rewrite (@bigmax_eq_arg _ o0 _ (fun o => VCG.bidSum'' i (biddings bs) o)) //. 
 move: argmax_bidSum''; rewrite /VCG_bidSum'' => ->.
-rewrite /VCG_bidSum'' /VCG.bidSum'' /VCG.bidSum.
+rewrite /VCG.bidSum'' /VCG.bidSum.
 rewrite (bigID (fun j : A => j < i)) [in RHS](bigID (fun j : A => j < i)) /=.
 congr (_ + _). 
 - apply: eq_bigr => j ltji.
@@ -1817,7 +1817,7 @@ Qed.
 
 End VCGforSearchRational.
 
-(* Truthfulness of VCG for Seach. *)
+(* (Partial) truthfulness of VCG for Seach. *)
 
 From mathcomp Require Import ssrint rat ssralg ssrnum.
 

@@ -29,7 +29,7 @@
 
 *)
 
-(* 
+(*
 
 From Coq Require Import Init.Prelude Unicode.Utf8.
 From mathcomp Require Import all_ssreflect.
@@ -77,24 +77,22 @@ Qed.
 
 Lemma ltn_addS_ord m (j : 'I_m.+1) : addS_ord j < m.+1.
 Proof.
-move: j => [j ltjm1] //=.
-case eqjm: (j == m).
-by rewrite ltnSn.
-have //: j < m. 
-  by move: eqjm; rewrite ltn_neqAle => ->. 
+move: j => [j ltjm1] //=. 
+case eqjm: (j == m); first by rewrite ltnSn.
+by move: eqjm; rewrite -eqSS ltn_neqAle => ->.
 Qed.
 
 Definition ord_succ m (j : 'I_(m.+1)) := Ordinal (@ltn_addS_ord m j).
   
-Lemma lt_ord_succ m (x : 'I_m.+1) : x < m -> x < ord_succ x.
+Lemma lt_ord_succ m (j : 'I_m.+1) : j < m -> j < ord_succ j.
 Proof.
-case: x => [s p] /= /ltn_eqF ->.
+case: j => [s p] /= /ltn_eqF ->.
 by rewrite ltnS.
 Qed.
 
-Lemma le_ord_succ m (x : 'I_m.+1) : x <= ord_succ x.
+Lemma le_ord_succ m (j : 'I_m.+1) : j <= ord_succ j.
 Proof.
-case: x => [s p] /=. 
+case: j => [s p] /=. 
 case: (s == m); last by rewrite leqnSn.
 by rewrite -ltnS.
 Qed.
@@ -109,22 +107,21 @@ Proof.
 by move: j => [j p]; rewrite -(inj_eq val_inj) ltn_neqAle -ltnS p andbT.
 Qed.
 
-Lemma cancel_ord_pred m (s : 'I_m.+1) : 0 < s -> ord_succ (ord_pred s) = s.
+Lemma cancel_ord_pred m (j : 'I_m.+1) : 0 < j -> ord_succ (ord_pred j) = j.
 Proof.
-move: s => [s p] /= lt0s.
+move: j => [s p] /= lt0s.
 apply: ord_inj => //=.
-rewrite prednK //. 
-have/ltn_eqF -> //: s.-1 < m.
-  move: p.
-  by rewrite -[X in X < m.+1](@prednK s).
+rewrite prednK //.
+move: p.
+by rewrite -[X in X < m.+1](@prednK s) // -eqSS => /ltn_eqF ->.
 Qed.
 
 Definition last_ord m := Ordinal (ltnSn m).
 
-Lemma cancel_ord_succ m (s : 'I_m.+1) :
-  s < last_ord m -> ord_pred (ord_succ s) = s.
+Lemma cancel_ord_succ m (j : 'I_m.+1) :
+  j < last_ord m -> ord_pred (ord_succ j) = j.
 Proof.
-move: s => [s p] /= ltsm. 
+move: j => [s p] /= ltsm. 
 apply: ord_inj => //=.
 by move/ltn_eqF: ltsm => ->.
 Qed.
@@ -170,7 +167,7 @@ Lemma leq_eqVlt_agent (j j' : A) : (j <= j') = (j == j') || (j < j').
 Proof. exact: leq_eqVlt. Qed.
 
 Lemma lt_le_agent (j j' : A)
-  (jnotlast : j != last_agent) :
+      (jnotlast : j != last_agent) :
   (j < j') = (agent_succ j <= j').
 Proof. by rewrite /= !eq_proper_addS; rewrite below_last_ord in jnotlast. Qed.
 
@@ -274,8 +271,8 @@ Definition differ_only_i bs' := forall j, j != i -> tnth bs' j = 'bidding_j.
 
 Theorem truthful bs' :
   'bidding_i =1 value ->
-    differ_only_i bs' ->
-      utility bs' <= utility bs.
+  differ_only_i bs' ->
+  utility bs' <= utility bs.
 Proof.
 move=> value_is_bid diff.
 rewrite /utility /price.

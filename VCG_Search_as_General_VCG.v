@@ -127,10 +127,10 @@ move=> eq0m P0.
 rewrite (bigD1 ord0) // -[in RHS](addn0 (F ord0)).
 congr (_ + _) => //=.
 set sum := (X in X = 0).
-have: sum = \sum_(i < m.+1 | false) F i.
+have -> : sum = \sum_(i < m.+1 | false) F i.
   apply: eq_bigl => i.
   by rewrite only_ord0 // andbF.
-by rewrite big_pred0_eq.
+exact: big_pred0_eq.
 Qed.
 
 Lemma tnth_uniq (T : eqType) m (x : T) (t : m.+1.-tuple T) i j :
@@ -852,14 +852,12 @@ Definition bidSumD1 o := @VCG.bidSumD1 O_finType i (biddings bs) o.
 
 Lemma s_bidSumD1 :
   \sum_(j < n) (bidding bs) j oStar =
-    (bidding bs) i oStar +
-    \sum_(j < n | j != i) (bidding bs) j oStar.
+    (bidding bs) i oStar + \sum_(j < n | j != i) (bidding bs) j oStar.
 Proof. by rewrite (bigD1 i). Qed.
 
 End BidSum.
 
-Hypothesis max_bidSum_singleton :
-  forall bs, singleton (max_bidSum_spec bs).
+Hypothesis max_bidSum_singleton : forall bs, singleton (max_bidSum_spec bs).
 
 (* VCG for Search, as a case of General VCG. *)
    
@@ -980,8 +978,7 @@ by have //=: ∃ i , tnth t_oStar s' = tnth t_oStar i by exists s'.
 Qed.
 
 Lemma sum_split_i F :
-  \sum_(s < k) F s =
-    \sum_(s < k | s < i) F s + F sOi + \sum_(s < k | i < s) F s.
+  \sum_(s < k) F s = \sum_(s < k | s < i) F s + F sOi + \sum_(s < k | i < s) F s.
 Proof.
 rewrite (bigID (fun s : slot => s < i)) => /=.
 rewrite -addnA.
@@ -1538,7 +1535,8 @@ have: 'lab'_j = tnth oStar_i (inord j).
     exact: ltn_trans ltjk'.
   have ltjk: j < k by exact: ltn_trans ltjk' (ltnSn k').
   rewrite eq_lab'_succ // shifted_tuple_i //; last first.
-  by rewrite inordK //. by rewrite inordK //.
+  by rewrite inordK //. 
+  by rewrite inordK //.
   rewrite tnth_mktuple; apply: val_inj => /=.
   by rewrite !eq_proper_addS /= ?inordK.
 - move: ltjk'.
@@ -1732,7 +1730,7 @@ case ltilast: (i < last_slot).
   rewrite big_cropr last_ctr_eq0  //= muln0 add0n.
   apply: eq_bigr => s /andP [leis ltsk'].
   rewrite /bc /bc' /slot_pred /slot_succ cancel_ord_succ //. 
-  congr (_ * _).
+  congr (_ * _). 
   by rewrite commuting_succ_agent.
 - move: ltilast. rewrite ltnNge. move/negbFE.
   rewrite leq_eqVlt => /orP [/eqP <-|].
@@ -1744,6 +1742,8 @@ case ltilast: (i < last_slot).
 Qed.
 
 End VCGforSearchPrice.
+
+(* Handle possible relabelling to use eq_sorted_VCG_price. *)
 
 Definition relabelled_i_in_oStar i i' bs := exists bs' ls',
     bids_sort bs = (bs', ls') /\ tnth ls' i' = i /\ i' \in bidders_of oStar.
@@ -1806,10 +1806,10 @@ rewrite (max_bidSum_singleton (VCG_oStar_extremum bs) (oStar_extremum sorted_bs)
 by rewrite ifT.
 Qed.
 
-Theorem rational (value_bs : value_is_bid_for_bids) : 
-  i < k -> price bs i <= value.
+Theorem rational (value_bs : value_is_bid_for_bids) :
+  price bs i <= value.
 Proof.
-move=> ltik.
+have ltik: i < k by apply: lt_i_k.
 rewrite (@eq_VCG_price _ _ i) //; last by exact: id_relabelled_sorted.
 move: (@VCG.rational _ o0 i (biddings bs) (tnth (biddings bs) i) erefl).
 by rewrite -bid_in_oStar ?tnth_mktuple.

@@ -1744,10 +1744,7 @@ Definition relabelled_i_in_oStar i i' bs := exists bs' ls',
     bids_sort bs = (bs', ls') /\ tnth ls' i' = i /\ i' \in bidders_of oStar.
 
 Lemma lt_relabelled_k (i i': A) bs : relabelled_i_in_oStar i i' bs -> i' < k.
-Proof.
-move=> [bs' [ls']] [bidssortbs [iwins [iino]]].
-exact: lt_i_k.
-Qed.
+Proof. move=> [bs' [ls']] [_ [_ [iino]]]; exact: lt_i_k. Qed.
 
 Lemma id_relabelled_sorted (i : A) bs : 
   i \in bidders_of oStar -> sorted_bids bs -> relabelled_i_in_oStar i i bs.
@@ -1767,14 +1764,14 @@ Hypothesis relabellizable_vcg_price : relabellizable (fun bs j => vcg_price j bs
 
 Theorem eq_VCG_price bs i i'
         (iwins : relabelled_i_in_oStar i i' bs) :
-  i' < k -> price bs i = vcg_price i bs.
+  price bs i = vcg_price i bs.
 Proof.
-move=> lti'k.
+have lti'k := lt_relabelled_k iwins.
 move: iwins => [bs' [ls']] [bidssortbs [iasi' [iino]]]. 
 move: (@bids_sort_spec bs bs' ls') => [/(_ bidssortbs) sortedsbs]. 
 move: (relabellizable_price bidssortbs i').
 move: (relabellizable_vcg_price bidssortbs i').
-rewrite !iasi' => <- <-_.
+rewrite !iasi' => <- <- _.
 exact: eq_sorted_VCG_price.
 Qed.
 
@@ -1879,7 +1876,7 @@ rewrite /utility /utility_per_click.
 - rewrite -ltnNge in ltbid. 
   rewrite max_l 1?mulrBl; last first.
   move: (ltnW ltbid); rewrite -lez_nat subr_ge0 ffunE PoszM.
-  move: (@eq_VCG_price bs i l iwins ltlk).
+  move: (@eq_VCG_price bs i l iwins).
   rewrite /vcg_price => <-.
   by rewrite ler_pdivr_mulr // -intrM ler_int.
   move: (ltbid); rewrite -ltz_nat -subzn; last by exact: ltnW ltbid.
@@ -1926,5 +1923,13 @@ rewrite -subr_eq0 -mulrBl mulrC mulrI_eq0 ?subr_eq0;
 rewrite -intrM => /eqP /(mulrIz _) => /(_ (oner_neq0 _)) /eqP.
 by rewrite -PoszM eqz_nat => /eqP.
 Qed.
+
+Conjecture VCGforSearch_truthful : forall (bs bs' : bids) (i l l' : A) 
+      (iwins : relabelled_i_in_oStar i l bs)
+      (iwins' : relabelled_i_in_oStar i l' bs')
+      (iposrate : 0 < click_rate l),
+  value_per_click_is_bid bs i l ->
+  differ_only_i i bs bs' ->
+  utility bs' i l' <= utility bs i l.
 
 Print Assumptions VCGforSearch_stable_truthful.

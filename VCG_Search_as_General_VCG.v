@@ -407,16 +407,10 @@ Definition labelling := n.-tuple A. (* Should be a perm. *)
 
 Definition labelling_id : labelling := ord_tuple n.
 
-Variable relabellizable : forall {T : eqType}, (bids -> A -> T) -> Prop.
-
-Definition relabelled_agents (ls : labelling) (bs bs0 : bids) :=
-  forall (T : eqType) (F : bids -> A -> T),
-    relabellizable F ->  forall (j : A), F bs j = F bs0 (tnth ls j).
-
 Variable (bids_sort : bids -> bids * labelling).
 
 Hypothesis bids_sort_spec : forall bs0 bs ls,
-  (bids_sort bs0 = (bs, ls) -> sorted_bids bs /\ relabelled_agents ls bs bs0) /\
+  (bids_sort bs0 = (bs, ls) -> sorted_bids bs) /\
   (sorted_bids bs0 -> bids_sort bs0 = (bs0, labelling_id)).
 
 (* VCG for Search algorithm. *)
@@ -1764,9 +1758,9 @@ move: (@bids_sort_spec bs bs ls) => [_ /(_ sortedbs)] ->.
 by rewrite tnth_ord_tuple.
 Qed.
 
-Lemma sorted_i_in_oStar (i : A) bs :
-  relabelled_i_in_oStar i i bs -> i \in bidders_of oStar.
-Proof. by move=> [bs' [ls']] [bidssortbs [relabi [i'inoS]]]. Qed.
+Definition relabellizable {T : eqType} (F : bids -> A -> T) :=
+  forall (ls' : labelling) (bs bs' : bids),
+    bids_sort bs = (bs', ls') -> forall (j' : A), F bs' j' = F bs (tnth ls' j').
 
 Hypothesis relabellizable_price : relabellizable price.
 Hypothesis relabellizable_vcg_price : relabellizable (fun bs j => vcg_price j bs).
@@ -1776,11 +1770,11 @@ Theorem eq_VCG_price bs i i'
   i' < k -> price bs i = vcg_price i bs.
 Proof.
 move=> lti'k.
-move: iwins => [bs' [ls']] [bidssortbs [iwins [iino]]].
-move: (@bids_sort_spec bs bs' ls') => [/(_ bidssortbs) [sortedsbs relabels]]. 
-move: (relabels _ price relabellizable_price i').
-move: (relabels _ (fun bs j => vcg_price j bs) relabellizable_vcg_price i').
-rewrite !iwins => <- <-_.
+move: iwins => [bs' [ls']] [bidssortbs [iasi' [iino]]]. 
+move: (@bids_sort_spec bs bs' ls') => [/(_ bidssortbs) sortedsbs]. 
+move: (relabellizable_price bidssortbs i').
+move: (relabellizable_vcg_price bidssortbs i').
+rewrite !iasi' => <- <-_.
 exact: eq_sorted_VCG_price.
 Qed.
 

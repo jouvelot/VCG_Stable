@@ -407,15 +407,16 @@ Definition labelling := n.-tuple A. (* Should be a perm. *)
 
 Definition labelling_id : labelling := ord_tuple n.
 
-Definition relabelled_agents (ls : labelling) (bs bs0 : bids) 
-           (T : eqType) (F : bids -> A -> T) :=
-  forall (j : A), F bs j = F bs0 (tnth ls j).
+Variable relabellizable : forall {T : eqType}, (bids -> A -> T) -> Prop.
+
+Definition relabelled_agents (ls : labelling) (bs bs0 : bids) :=
+  forall (T : eqType) (F : bids -> A -> T),
+    relabellizable F ->  forall (j : A), F bs j = F bs0 (tnth ls j).
 
 Variable (bids_sort : bids -> bids * labelling).
 
-Hypothesis bids_sort_spec : forall bs0 bs ls (T : eqType) F,
-  (bids_sort bs0 = (bs, ls) ->
-     sorted_bids bs /\ (@relabelled_agents ls bs bs0 T F)) /\
+Hypothesis bids_sort_spec : forall bs0 bs ls,
+  (bids_sort bs0 = (bs, ls) -> sorted_bids bs /\ relabelled_agents ls bs bs0) /\
   (sorted_bids bs0 -> bids_sort bs0 = (bs0, labelling_id)).
 
 (* VCG for Search algorithm. *)
@@ -908,7 +909,7 @@ Notation "'lab_ j" := (tnth ls j) (at level 10).
 
 Lemma eq_sorted_bs0_bs : bids_sort bs0 = (bs, ls).
 Proof.
-by move: (@bids_sort_spec bs0 bs ls _ (@tnth n bid)) => [_ /(_ sorted_bs)].
+by move: (@bids_sort_spec bs0 bs ls) => [_ /(_ sorted_bs)].
 Qed.
 
 (* VCG social welfare with i. *)
@@ -1759,7 +1760,7 @@ Lemma id_relabelled_sorted (i : A) bs :
 Proof.
 move=> iwins sortedbs.
 exists bs. exists labelling_id.
-move: (@bids_sort_spec bs bs ls _ (@tnth n bid)) => [_ /(_ sortedbs)] ->. 
+move: (@bids_sort_spec bs bs ls) => [_ /(_ sortedbs)] ->. 
 by rewrite tnth_ord_tuple.
 Qed.
 
@@ -1767,16 +1768,20 @@ Lemma sorted_i_in_oStar (i : A) bs :
   relabelled_i_in_oStar i i bs -> i \in bidders_of oStar.
 Proof. by move=> [bs' [ls']] [bidssortbs [relabi [i'inoS]]]. Qed.
 
+Hypothesis relabellizable_price : relabellizable price.
+Hypothesis relabellizable_vcg_price : relabellizable (fun bs j => vcg_price j bs).
+
 Theorem eq_VCG_price bs i i'
         (iwins : relabelled_i_in_oStar i i' bs) :
   i' < k -> price bs i = vcg_price i bs.
 Proof.
 move=> lti'k.
 move: iwins => [bs' [ls']] [bidssortbs [iwins [iino]]].
-pose f bs i := price bs i == vcg_price i bs.
-move: (@bids_sort_spec bs bs' ls' _ f) => [/(_ bidssortbs) [sortedsbs]] /(_ i').
-rewrite /f !iwins => eqprice _.
-by apply/eqP; rewrite -eqprice eq_sorted_VCG_price.
+move: (@bids_sort_spec bs bs' ls') => [/(_ bidssortbs) [sortedsbs relabels]]. 
+move: (relabels _ price relabellizable_price i').
+move: (relabels _ (fun bs j => vcg_price j bs) relabellizable_vcg_price i').
+rewrite !iwins => <- <-_.
+exact: eq_sorted_VCG_price.
 Qed.
 
 (* VCG for Search properties. *)

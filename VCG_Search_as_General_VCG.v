@@ -1927,7 +1927,8 @@ Qed.
 Conjecture VCGforSearch_truthful : forall (bs bs' : bids) (i l l' : A) 
       (iwins : relabelled_i_in_oStar i l bs)
       (iwins' : relabelled_i_in_oStar i l' bs')
-      (iposrate : 0 < click_rate l),
+      (iposrate : 0 < click_rate l)
+      (iposrate' : 0 < click_rate l'),
   value_per_click_is_bid bs i l ->
   differ_only_i i bs bs' ->
   utility bs' i l' <= utility bs i l.

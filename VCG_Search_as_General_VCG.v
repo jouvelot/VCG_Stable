@@ -1924,6 +1924,20 @@ rewrite -intrM => /eqP /(mulrIz _) => /(_ (oner_neq0 _)) /eqP.
 by rewrite -PoszM eqz_nat => /eqP.
 Qed.
 
+Lemma VCGforSearch_stable_truthful' (bs bs' : bids) (i l : A) 
+      (iwins : relabelled_i_in_oStar i l bs)
+      (iwins' : relabelled_i_in_oStar i l bs') :
+  value_per_click_is_bid bs i l ->
+  differ_only_i i bs bs' ->
+  utility bs' i l <= utility bs i l.
+Proof.
+- have [] := boolP (0 < click_rate l).
+  exact: VCGforSearch_stable_truthful.
+- have: 0 <= click_rate l by exact: ler0z. 
+  rewrite /utility le0r => /orP [/eqP -> |/negbF -> //].
+  by rewrite !mulr0.
+Qed.
+
 Conjecture VCGforSearch_truthful : forall (bs bs' : bids) (i l l' : A) 
       (iwins : relabelled_i_in_oStar i l bs)
       (iwins' : relabelled_i_in_oStar i l' bs')

@@ -72,7 +72,7 @@ move=> lt0m ltil.
 rewrite (bigD1 ord_max) //=.
 rewrite [in RHS](bigD1 (ord_pred ord_max)) //=; last first.
 apply/andP. split; last by rewrite ltn_predL.
-rewrite -ltnS (ltn_predK lt0m); first by exact: ltil.
+rewrite -ltnS (ltn_predK lt0m) //.
 rewrite cancel_ord_pred //=; last first.
 congr (_ + _).
 pose P := fun s : 'I_m.+1 => (i < s) && (s != ord_max).

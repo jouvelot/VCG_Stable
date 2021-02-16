@@ -1920,7 +1920,8 @@ rewrite tnth_mktuple /per_click /value_bidding [X in bidding _ _ _ = X]ffunE.
 rewrite (@eq_divr (value_per_click i)%:Q (click_rate l)) // => /eqP. 
 rewrite -subr_eq0 -mulrBl mulrC mulrI_eq0 ?subr_eq0; 
   last by apply/lregP; rewrite lt0r_neq0 ?invr_gt0.
-rewrite -intrM => /eqP /(mulrIz _) => /(_ (oner_neq0 _)) /eqP.
+rewrite -intrM => /eqP /(mulrIz _). 
+move/(_ (oner_neq0 _))=> /eqP.
 by rewrite -PoszM eqz_nat => /eqP.
 Qed.
 

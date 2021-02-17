@@ -1760,7 +1760,7 @@ Definition relabellizable {T : eqType} (F : bids -> A -> T) :=
     bids_sort bs = (bs', ls') -> forall (j' : A), F bs' j' = F bs (tnth ls' j').
 
 Hypothesis relabellizable_price : relabellizable price.
-Hypothesis relabellizable_vcg_price : relabellizable (fun bs j => vcg_price j bs).
+Hypothesis relabellizable_vcg_price : relabellizable (fun bs => vcg_price ^~ bs).
 
 Theorem eq_VCG_price bs i i'
         (iwins : relabelled_i_in_oStar i i' bs) :

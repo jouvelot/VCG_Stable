@@ -1944,6 +1944,6 @@ Conjecture VCGforSearch_truthful : forall (bs bs' : bids) (i l l' : A)
       (iwins' : relabelled_i_in_oStar i l' bs'),
   value_per_click_is_bid bs i l ->
   differ_only_i i bs bs' ->
-  utility_per_click bs' i l' <= utility_per_click bs i l.
+  utility_per_click bs' i l' * click_rate l' <= utility_per_click bs i l * click_rate l.
 
 Print Assumptions VCGforSearch_stable_truthful.

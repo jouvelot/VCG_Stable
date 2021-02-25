@@ -6,7 +6,7 @@ General_VCG/mechanism.v file, if you only want to run this one.
 
 See file headers for proper description.
 
-Version for ITP 2021 short paper submission: "Towards a Generic CoQ Proof of the Truthfulness of Vickrey–Clarke–Groves Auctions for Search"
+Version for ITP 2021 short paper submission: "Towards a Generic CoQ Proof of the Truthfulness of Vickrey–Clarke–Groves Auctions for Search". For the ongoing project, see http://github.com/jouvelot/VCG.
 
 Pierre Jouvelot, MINES ParisTech, PSL University, France
 

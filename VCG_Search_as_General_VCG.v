@@ -1768,10 +1768,8 @@ Theorem eq_VCG_price bs i i'
 Proof.
 have lti'k := lt_relabelled_k iwins.
 move: iwins => [bs' [ls']] [bidssortbs [iasi' [iino]]]. 
-move: (@bids_sort_spec bs bs' ls') => [/(_ bidssortbs) sortedsbs]. 
-move: (relabellizable_price bidssortbs i').
-move: (relabellizable_vcg_price bidssortbs i').
-rewrite !iasi' => <- <- _.
+move: (@bids_sort_spec bs bs' ls') => [/(_ bidssortbs) sortedsbs] _.
+rewrite -!iasi' -(relabellizable_price bidssortbs) -(relabellizable_vcg_price bidssortbs).
 exact: eq_sorted_VCG_price.
 Qed.
 

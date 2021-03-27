@@ -8,7 +8,7 @@ See file headers for proper description.
 
 This formalization has been tested using the following running environment on MacOS :
 
-nix-shell -p coqPackages_8_12.coq -p coqPackages_8_12.mathcomp --run \ /Applications/Emacs.app/Contents/MacOS/Emacs
+nix-shell -p coqPackages_8_12.coq -p coqPackages_8_12.mathcomp --run /Applications/Emacs.app/Contents/MacOS/Emacs
 
 Pierre Jouvelot, MINES ParisTech, PSL University, France
 

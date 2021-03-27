@@ -1,4 +1,4 @@
-# VCG Stable
+# VCG (partial)
 
 A Coq/SSReflect formalization project of the General Vickrey-Clarke-Groves (VCG) auction mechanism and VCG for Search auction algorithm, seen as an instance of the general mechnism. In addition, we provide proof of their important properties, namely No positive tranfer, Rationality and (partial, for now) Truthfulness.
 

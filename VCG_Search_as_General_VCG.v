@@ -773,7 +773,7 @@ exact: ExtremumSpec.
 Qed.
 
 Conjecture uniq_max_bidSum : uniq bs -> singleton max_bidSum_spec.
-Hypothesis max_bidSum_singleton : singleton max_bidSum_spec.
+Hypothesis uniq_oStar : singleton max_bidSum_spec.
 
 Definition bid_ctr_slot s := 'bid_(slot_as_agent s) * 'ctr_s.
 Definition bid_ctr_agent j := 'bid_j * 'ctr_(slot_of j oStar).
@@ -885,7 +885,7 @@ Hypothesis sorted_bs0 : sorted_bids bs0.
 
 Definition bs := bs0.
 
-Hypothesis max_bidSum_singleton : singleton (max_bidSum_spec bs).
+Hypothesis uniq_oStar : singleton (max_bidSum_spec bs).
 
 Lemma sorted_bs : sorted_bids bs.
 Proof. exact: sorted_bs0. Qed.
@@ -980,7 +980,7 @@ Lemma s_welfare_with_i :
 Proof.
 rewrite /welfare_with_i /VCG.welfare_with_i /VCG.bidSum_i.
 rewrite -/(VCG_oStar bs). 
-rewrite (max_bidSum_singleton (VCG_oStar_extremum bs) (oStar_extremum sorted_bs)).
+rewrite (uniq_oStar (VCG_oStar_extremum bs) (oStar_extremum sorted_bs)).
 rewrite (bidsSum_sumBid (fun j => j != i)).
 apply/eqP; rewrite -(eqn_add2l (bidding bs i oStar)); apply/eqP.
 rewrite -s_bidSumD1 -valid_bidSum /bidding ffunE /t_bidding.
@@ -1776,9 +1776,10 @@ Lemma sort_tupleP T n r (t : n.-tuple T): size (sort r t) == n.
 Proof. by rewrite size_sort size_tuple. Qed.
 Canonical sort_tuple T n r t := Tuple (@sort_tupleP T n r t).
 
-Definition bids_sort (bs : bids) := ([tuple of sort geq_bid bs], labelling_of bs).
+Definition bids_sort (bs : bids) : bids * labelling := 
+  ([tuple of sort geq_bid bs], labelling_of bs).
 
-Hypothesis labelling_spec : forall bs, sorted_bids bs -> bids_sort bs = (bs, labelling_id).
+Hypothesis labelling_stable_spec : forall bs, sorted_bids bs -> labelling_of bs = labelling_id.
 
 Lemma bids_sort_spec bs0 bs ls :
   (bids_sort bs0 = (bs, ls) -> sorted_bids bs) /\
@@ -1790,7 +1791,16 @@ Proof.
   apply: (iffRL (sorted_bids_sorted bs)).
   rewrite -isbs sort_sorted //.
   exact: total_geq_bid.
-- exact: labelling_spec.
+- rewrite /bids_sort => sortedbs0. 
+  have -> : [tuple of sort geq_bid bs0] = bs0.
+    apply: val_inj => /=.
+    apply: (eq_sorted transitive_geq_bid anti_geq_bid). 
+    apply: sort_sorted.
+    apply: total_geq_bid.
+    apply: (iffLR (sorted_bids_sorted bs0)) => //.
+    apply: permEl.
+    exact: perm_sort.
+  by rewrite labelling_stable_spec.
 Qed.
 
 Definition relabelled_i_in_oStar i i' bs := exists bs' ls',
@@ -1821,7 +1831,7 @@ move: (@bids_sort_spec bs0 bs ls) => [].
 by rewrite {1}(surjective_pairing (bids_sort bs0)) => /(_ erefl).
 Qed.
 
-Hypothesis max_bidSum_singleton : singleton (max_bidSum_spec bs).
+Hypothesis uniq_oStar : singleton (max_bidSum_spec bs).
 
 Variable (i i' : A).
 
@@ -1852,7 +1862,7 @@ Variable (i i' : A) (iwins : relabelled_i_in_oStar i i' bs0).
 
 Let bs := (bids_sort bs0).1.
 
-Hypothesis max_bidSum_singleton : singleton (max_bidSum_spec bs).
+Hypothesis uniq_oStar : singleton (max_bidSum_spec bs).
 
 Theorem no_positive_transfer : (* 0 <= externality *) 
   forall (s : slot), 'ctr_s <= 'ctr_(slot_pred s).
@@ -1869,7 +1879,7 @@ Lemma bid_in_oStar (value_bs : value_is_bid_for_bids) :
 Proof. 
 rewrite /bidding ffunE /t_bidding.
 rewrite -/(VCG_oStar bs). 
-rewrite (max_bidSum_singleton (VCG_oStar_extremum bs) (oStar_extremum (sortedbs bs0))).
+rewrite (uniq_oStar (VCG_oStar_extremum bs) (oStar_extremum (sortedbs bs0))).
 move: iwins => [bs' [ls']] [bidssortbs [iasi' [iino]]]. 
 by rewrite ifT.
 Qed.
@@ -1878,7 +1888,7 @@ Theorem rational (value_bs : value_is_bid_for_bids) :
   relabelled_price iwins  <= value.
 Proof.
 have ltik: i' < k by apply: (lt_relabelled_k iwins).
-rewrite (eq_VCG_price max_bidSum_singleton iwins) // /relabelled_vcg_price.
+rewrite (eq_VCG_price uniq_oStar iwins) // /relabelled_vcg_price.
 move: (@VCG.rational _ o0 i' (biddings bs) (tnth (biddings bs) i') erefl).
 by rewrite -bid_in_oStar ?tnth_mktuple.
 Qed.
@@ -1910,7 +1920,7 @@ Variable (bs0' : bids) (j l : A) (jwins : relabelled_i_in_oStar j l bs0').
 
 Let bs' := (bids_sort bs0').1.
 
-Hypothesis max_bidSum_singleton' : singleton (max_bidSum_spec bs').
+Hypothesis uniq_oStar' : singleton (max_bidSum_spec bs').
 
 Definition click_rate := ('ctr_(sOi l))%:Q.
 
@@ -1942,19 +1952,19 @@ rewrite /utility /utility_per_click.
   rewrite le_NQ in ltbid.
   rewrite max_r ?mul0r //.  
   move: ltbid; rewrite ffunE subr_le0 PoszM intrM /price_per_click.
-  rewrite (eq_VCG_price max_bidSum_singleton' jwins).
+  rewrite (eq_VCG_price uniq_oStar' jwins).
   by rewrite /relabelled_vcg_price /vcg_price /per_click // -ler_pdivl_mulr.
 - rewrite -ltnNge in ltbid. 
   rewrite max_l 1?mulrBl; last first.
   move: (ltnW ltbid); rewrite -lez_nat subr_ge0 ffunE PoszM.
-  move: (eq_VCG_price max_bidSum_singleton' jwins).
+  move: (eq_VCG_price uniq_oStar' jwins).
   rewrite /relabelled_vcg_price /vcg_price => <-.
   by rewrite ler_pdivr_mulr // -intrM ler_int.
   move: (ltbid); rewrite -ltz_nat -subzn; last by exact: ltnW ltbid.
   rewrite intrD => ltrbid.
   congr (_ + _).
   by rewrite ffunE PoszM intrM.
-  rewrite /price_per_click /per_click (eq_VCG_price max_bidSum_singleton' jwins).
+  rewrite /price_per_click /per_click (eq_VCG_price uniq_oStar' jwins).
   rewrite /relabelled_vcg_price /vcg_price // -mulrA mulVf; last by rewrite lt0r_neq0.
   by rewrite mulr1 mulrNz.
 Qed.
@@ -1979,7 +1989,7 @@ Qed.
 
 Lemma VCGforSearch_stable_truthful' (bs0' : bids) 
       (iwins' : relabelled_i_in_oStar i i' bs0')
-      (maxsingleton' : singleton (max_bidSum_spec (bids_sort bs0').1))
+      (uniq_oStar' : singleton (max_bidSum_spec (bids_sort bs0').1))
       (iposrate : 0 < click_rate i') :
   value_per_click_is_bid bs0 i i' ->
   differ_only_i i' bs (bids_sort bs0').1 ->
@@ -2001,7 +2011,7 @@ Qed.
 
 Lemma VCGforSearch_stable_truthful (bs0' : bids) 
       (iwins' : relabelled_i_in_oStar i i' bs0') 
-      (maxsingleton' : singleton (max_bidSum_spec (bids_sort bs0').1)) :
+      (uniq_oStar' : singleton (max_bidSum_spec (bids_sort bs0').1)) :
   value_per_click_is_bid bs0 i i' ->
   differ_only_i i' bs (bids_sort bs0').1 ->
   utility iwins' <= utility iwins.
@@ -2015,7 +2025,7 @@ Qed.
 
 Conjecture VCGforSearch_truthful : forall (bs0' : bids) (i'': A) 
       (iwins' : relabelled_i_in_oStar i i'' bs0')
-      (maxsingleton' : singleton (max_bidSum_spec (bids_sort bs0').1)),
+      (uniq_oStar' : singleton (max_bidSum_spec (bids_sort bs0').1)),
   value_per_click_is_bid bs0 i i' ->
   differ_only_i i' bs (bids_sort bs0').1 ->
   utility iwins' <= utility iwins.

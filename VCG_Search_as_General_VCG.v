@@ -26,10 +26,10 @@
    - Georges Gonthier (slot_of).
 
 *)
-
+ 
 From Coq Require Import Init.Prelude Unicode.Utf8.
 From mathcomp Require Import all_ssreflect.
-From mathcomp Require Import fingroup.perm. 
+From mathcomp Require Import fingroup.perm path.
 
 Load General_VCG_mechanism.
 
@@ -403,24 +403,16 @@ Definition bids := n.-tuple bid.
 
 Definition sorted_bids (bs : bids) := sorted_tuple bs.
 
-Definition labelling := n.-tuple A. (* Should be a perm. *)
+(* VCG for Search algorithm, assuming bids are downsorted. *)
+(* Labellings are used to map sorted agents to initial agents. *)
+
+Definition labelling := n.-tuple A. 
 
 Definition labelling_id : labelling := ord_tuple n.
 
-Variable (bids_sort : bids -> bids * labelling).
+Section VCGforSearchAlgorithm.
 
-Hypothesis bids_sort_spec : forall bs0 bs ls,
-  (bids_sort bs0 = (bs, ls) -> sorted_bids bs) /\
-  (sorted_bids bs0 -> bids_sort bs0 = (bs0, labelling_id)).
-
-(* VCG for Search algorithm. *)
-
-Section VCGforSearch.
-
-Variable (bs0 : bids).
-
-Let bs := (bids_sort bs0).1.
-Let ls := (bids_sort bs0).2.
+Variable (bs : bids).
 
 Notation "'bid_ j" := (tnth bs j) (at level 10).
 
@@ -433,10 +425,10 @@ Definition externality (s : slot) :=
   let j := slot_as_agent s in
   'bid_j * ('ctr_(slot_pred s) - ('ctr_s)).
 
-Definition price (i : A) := 
+Definition price (sortedbs : sorted_bids bs) (i : A) := 
   if i < k then \sum_(s < k | i.+1 <= s) externality s else 0.
 
-End VCGforSearch.
+End VCGforSearchAlgorithm.
 
 (* VCG for Search, seen as a special case of General VCG *)
 
@@ -900,11 +892,6 @@ Notation "'bid_ j" := (tnth bs j) (at level 10).
 Definition ls : labelling := labelling_id.
 
 Notation "'lab_ j" := (tnth ls j) (at level 10).
-
-Lemma eq_sorted_bs0_bs : bids_sort bs0 = (bs, ls).
-Proof.
-by move: (@bids_sort_spec bs0 bs ls) => [_ /(_ sorted_bs)].
-Qed.
 
 (* VCG social welfare with i. *)
 
@@ -1682,11 +1669,10 @@ Qed.
 Definition vcg_price := @VCG.price [finType of O] o0 i (biddings bs).
 
 Lemma eq_sorted_VCG_price : 
-  i < k -> price bs0 i = vcg_price.
+  i < k -> price sorted_bs0 i = vcg_price.
 Proof.
 move=> ltik.
 rewrite /vcg_price /price /externality VCG.eq_price'' /VCG.price''.
-rewrite eq_sorted_bs0_bs /=. 
 rewrite -/welfare_without_i'' -/welfare_with_i.
 rewrite s_welfare_without_i'' s_welfare_with_i.
 rewrite -/bs subnDl.
@@ -1740,6 +1726,71 @@ End VCGforSearchPrice.
 
 (* Handle possible relabelling to use eq_sorted_VCG_price. *)
 
+Definition geq_bid (b1 b2 : bid) := b1 >= b2.
+
+Lemma transitive_geq_bid : transitive geq_bid.
+Proof. exact/rev_trans/leq_trans. Qed.
+
+Lemma reflexive_geq_bid : reflexive geq_bid.
+Proof. move=> x. exact: leqnn. Qed.
+
+Lemma anti_geq_bid: antisymmetric geq_bid.
+Proof. by move=> x y /anti_leq /val_inj. Qed.
+
+Lemma total_geq_bid: total geq_bid.
+Proof. by move=> b1 b2; exact: leq_total. Qed.
+
+Lemma sorted_bids_sorted bs : sorted_bids bs <-> sorted geq_bid bs.
+Proof.
+split=> sortedbs.
+- apply: (@path_sorted _ geq_bid ord_max).
+  apply/(pathP ord0) => j ltjz.
+  move: j ltjz => [_|m m1].
+  - have -> : nth ord0 (ord_max :: bs) 0 = ord_max by rewrite nth0.
+    by move: (ltn_ord (nth ord0 bs 0)).
+  - rewrite -nth_behead /behead /geq_bid.
+    rewrite size_tuple in m1.
+    have -> : m.+1 = Ordinal m1 by [].
+    rewrite -tnth_nth.
+    have eqmom : m = Ordinal (ltn_trans (ltnSn m) m1) by [].
+    rewrite [X in nth ord0 _ X]eqmom -tnth_nth.
+    by rewrite sortedbs //=.
+- move=> j1 j2 lej1j2.
+  rewrite !(tnth_nth ord0).
+  have jin (j : A) : j \in [pred j' : A | j' < size bs].
+    by rewrite unfold_in /= size_tuple ltn_ord.
+  apply: (sorted_le_nth transitive_geq_bid leqnn) => //.
+  exact: jin.
+  exact: jin.
+Qed.
+
+Variable labelling_of : bids -> labelling.
+
+Definition is_labelling (bs bs' : bids) ls' := 
+  [forall j' : A, tnth bs' j' == tnth bs (tnth ls' j')].
+
+Lemma sort_tupleP T n r (t : n.-tuple T): size (sort r t) == n.
+Proof. by rewrite size_sort size_tuple. Qed.
+Canonical sort_tuple T n r t := Tuple (@sort_tupleP T n r t).
+
+Definition bids_sort (bs : bids) := ([tuple of sort geq_bid bs], labelling_of bs).
+
+Hypothesis labelling_spec : 
+  forall bs, sorted_bids bs -> bids_sort bs = (bs, labelling_id).
+
+Lemma bids_sort_spec bs0 bs ls :
+  (bids_sort bs0 = (bs, ls) -> sorted_bids bs) /\
+  (sorted_bids bs0 -> bids_sort bs0 = (bs0, labelling_id)).
+Proof.
+- split.
+  rewrite (surjective_pairing (bids_sort bs0)).
+  case=> isbs _.
+  apply: (iffRL (sorted_bids_sorted bs)).
+  rewrite -isbs sort_sorted //.
+  exact: total_geq_bid.
+- exact: labelling_spec.
+Qed.
+
 Definition relabelled_i_in_oStar i i' bs := exists bs' ls',
     bids_sort bs = (bs', ls') /\ tnth ls' i' = i /\ i' \in bidders_of oStar.
 
@@ -1755,25 +1806,46 @@ move: (@bids_sort_spec bs bs ls) => [_ /(_ sortedbs)] ->.
 by rewrite tnth_ord_tuple.
 Qed.
 
-Definition relabellizable {T : eqType} (F : bids -> A -> T) :=
-  forall (ls' : labelling) (bs bs' : bids),
-    bids_sort bs = (bs', ls') -> forall (j' : A), F bs' j' = F bs (tnth ls' j').
+Section UnsortedVCG.
 
-Hypothesis relabellizable_price : relabellizable price.
-Hypothesis relabellizable_vcg_price : relabellizable (fun bs => vcg_price ^~ bs).
+Variable (bs0 : bids).
 
-Theorem eq_VCG_price bs i i'
-        (iwins : relabelled_i_in_oStar i i' bs) :
-  price bs i = vcg_price i bs.
+Let bs := (bids_sort bs0).1.
+Let ls := (bids_sort bs0).2.
+
+Lemma sortedbs : sorted_bids bs. 
+Proof.
+move: (@bids_sort_spec bs0 bs ls) => [].
+by rewrite {1}(surjective_pairing (bids_sort bs0)) => /(_ erefl).
+Qed.
+
+Variable (i i' : A).
+
+Definition relabelled_price (iwins : relabelled_i_in_oStar i i' bs0) := price sortedbs i'.
+
+Definition relabelled_vcg_price := vcg_price i' bs.
+Conjecture VCG_price_sorting_invariant : vcg_price i bs0 = vcg_price i' bs.
+
+Theorem eq_VCG_price (iwins : relabelled_i_in_oStar i i' bs0) :
+  relabelled_price iwins = relabelled_vcg_price.
 Proof.
 have lti'k := lt_relabelled_k iwins.
 move: iwins => [bs' [ls']] [bidssortbs [iasi' [iino]]]. 
-move: (@bids_sort_spec bs bs' ls') => [/(_ bidssortbs) sortedsbs] _.
-rewrite -!iasi' -(relabellizable_price bidssortbs) -(relabellizable_vcg_price bidssortbs).
+rewrite /relabelled_price /relabelled_vcg_price.
 exact: eq_sorted_VCG_price.
 Qed.
 
+End UnsortedVCG.
+
 (* VCG for Search properties. *)
+
+Section VCGProperties.
+
+Variable bs0 : bids.
+
+Variable (i i' : A) (iwins : relabelled_i_in_oStar i i' bs0).
+
+Let bs := (bids_sort bs0).1.
 
 Theorem no_positive_transfer : (* 0 <= externality *) 
   forall (s : slot), 'ctr_s <= 'ctr_(slot_pred s).
@@ -1781,35 +1853,28 @@ Proof. move=> s; apply: sorted_ctrs. exact: leq_pred. Qed.
 
 Variable value_per_click : A -> nat.
 
-Section VCGforSearchRational.
+Definition value := value_per_click i * 'ctr_(sOi i').
 
-Variable (bs : bids) (sorted_bs : sorted_bids bs).
-
-Variable (i : A) (iwins : i \in bidders_of oStar).
-
-Definition value := value_per_click i * 'ctr_(sOi i).
-
-Definition value_is_bid_for_bids := bid_in bs i (sOi i) = value.
+Definition value_is_bid_for_bids := bid_in bs i' (sOi i') = value.
 
 Lemma bid_in_oStar (value_bs : value_is_bid_for_bids) :
-  bidding bs i (VCG.oStar o0 (biddings bs)) = value.
+  bidding bs i' (VCG.oStar o0 (biddings bs)) = value.
 Proof. 
 rewrite /bidding ffunE /t_bidding.
 rewrite -/(VCG_oStar bs). 
-rewrite (max_bidSum_singleton (VCG_oStar_extremum bs) (oStar_extremum sorted_bs)).
+rewrite (max_bidSum_singleton (VCG_oStar_extremum bs) (oStar_extremum (sortedbs bs0))).
+move: iwins => [bs' [ls']] [bidssortbs [iasi' [iino]]]. 
 by rewrite ifT.
 Qed.
 
 Theorem rational (value_bs : value_is_bid_for_bids) :
-  price bs i <= value.
+  relabelled_price iwins  <= value.
 Proof.
-have ltik: i < k by apply: lt_i_k.
-rewrite (@eq_VCG_price _ _ i) //; last by exact: id_relabelled_sorted.
-move: (@VCG.rational _ o0 i (biddings bs) (tnth (biddings bs) i) erefl).
+have ltik: i' < k by apply: (lt_relabelled_k iwins).
+rewrite (eq_VCG_price iwins) // /relabelled_vcg_price.
+move: (@VCG.rational _ o0 i' (biddings bs) (tnth (biddings bs) i') erefl).
 by rewrite -bid_in_oStar ?tnth_mktuple.
 Qed.
-
-End VCGforSearchRational.
 
 (* (Partial) truthfulness of VCG for Seach. *)
 
@@ -1832,116 +1897,117 @@ Proof. by rewrite -mulrA [X in (_ * X)]mulrC mulVr ?mulr1 ?unitf_gt0. Qed.
 
 End Utils.
 
-Section VCGforSearchTruthful.
+Section Utility.
 
-Definition click_rate (l : A) := ('ctr_(sOi l))%:Q.
+Variable (bs0' : bids) (j l : A) (jwins : relabelled_i_in_oStar j l bs0').
 
-Definition per_click (l : A) (n : nat) := n%:Q / click_rate l.
+Let bs' := (bids_sort bs0').1.
 
-Definition price_per_click (bs : bids) (i l : A) := 
-  per_click l (price bs i).
+Definition click_rate := ('ctr_(sOi l))%:Q.
 
-Definition utility_per_click (bs : bids) (i l : A) := 
+Definition per_click (n : nat) := n%:Q / click_rate.
+
+Definition price_per_click := per_click (relabelled_price jwins).
+
+Definition utility_per_click :=
   (* max needed since VCG.utility is a nat. *)
-  maxr ((value_per_click i)%:Q - price_per_click bs i l) 0.
+  maxr ((value_per_click j)%:Q - price_per_click) 0.
 
-Definition utility (bs : bids) (i l : A) := 
-  utility_per_click bs i l * click_rate l.
+Definition utility := utility_per_click * click_rate.
 
-Definition vcg_utility (i : A) v bs := (VCG.utility o0 i v bs)%:Q.
+Definition vcg_utility (j : A) v bs := (VCG.utility o0 j v bs)%:Q.
 
-Definition value_bidding (i l : A) :=
-  [ffun o : O => (value_per_click i * 'ctr_(sOi l))%nat].
+Definition value_bidding :=
+  [ffun o : O => (value_per_click j * 'ctr_(sOi l))%nat].
 
-Lemma eq_VCG_utility (bs : bids) (i l : A) 
-      (iwins : relabelled_i_in_oStar i l bs) :
-  0 < click_rate l ->
-  utility bs i l = vcg_utility i (value_bidding i l) (biddings bs).
+Lemma eq_VCG_utility :
+  0 < click_rate -> utility = vcg_utility l value_bidding (biddings bs').
 Proof.
 move=> posrate.
-have ltlk :=  (@lt_relabelled_k i _ bs iwins).
+have ltlk :=  (@lt_relabelled_k j _ bs0' jwins).
 rewrite /vcg_utility /VCG.utility. 
-set bbs := biddings bs.
+set bbs := biddings bs'.
 rewrite /utility /utility_per_click.
-- have [] := boolP (value_bidding i l (VCG.oStar o0 bbs) <= 
-                    VCG.price o0 i bbs)%N => ltbid. 
+- have [] := boolP (value_bidding (VCG.oStar o0 bbs) <= VCG.price o0 l bbs)%N => ltbid. 
   move: (ltbid); rewrite -subn_eq0 => /eqP ->.   
   rewrite le_NQ in ltbid.
   rewrite max_r ?mul0r //.  
   move: ltbid; rewrite ffunE subr_le0 PoszM intrM /price_per_click.
-  rewrite (@eq_VCG_price _ _ l) /vcg_price /per_click //.
+  rewrite (eq_VCG_price jwins) /relabelled_vcg_price /vcg_price /per_click //.
   by rewrite -ler_pdivl_mulr.
 - rewrite -ltnNge in ltbid. 
   rewrite max_l 1?mulrBl; last first.
   move: (ltnW ltbid); rewrite -lez_nat subr_ge0 ffunE PoszM.
-  move: (@eq_VCG_price bs i l iwins).
-  rewrite /vcg_price => <-.
+  move: (eq_VCG_price jwins).
+  rewrite /relabelled_vcg_price /vcg_price => <-.
   by rewrite ler_pdivr_mulr // -intrM ler_int.
   move: (ltbid); rewrite -ltz_nat -subzn; last by exact: ltnW ltbid.
   rewrite intrD => ltrbid.
   congr (_ + _).
   by rewrite ffunE PoszM intrM.
-  rewrite /price_per_click /per_click (@eq_VCG_price _ _ l) /vcg_price //.
+  rewrite /price_per_click /per_click (eq_VCG_price jwins) /relabelled_vcg_price /vcg_price //.
   rewrite -mulrA mulVf; last by rewrite lt0r_neq0.
   by rewrite mulr1 mulrNz.
 Qed.
 
-Definition differ_only_i i (bs bs' : bids) := forall j, j != i -> tnth bs' j = tnth bs j.
+End Utility.
 
-Lemma vcg_differ_only_i (bs bs' : bids) (i : A)
-      (diffi : differ_only_i i bs bs') :
-  VCG.differ_only_i i (biddings bs) (biddings bs').
+Definition value_per_click_is_bid (bs0' : bids) (j l : A) := 
+  [forall o : O, per_click l (bidding (bids_sort bs0').1 l o) == (value_per_click j)%:Q].
+
+Definition differ_only_i j (bs bs' : bids) := forall (j' : A), j' != j -> tnth bs' j' = tnth bs j'.
+
+Lemma vcg_differ_only_i (j : A) (bs1 bs2 : bids)
+      (diffi : differ_only_i j bs1 bs2) :
+  VCG.differ_only_i j (biddings bs1) (biddings bs2).
 Proof.
-move=> j neji.
+move=> j' nej'j.
 apply/ffunP => o.
 rewrite !tnth_mktuple !ffunE /t_bidding.
 congr (if _ then (_ * _) else _)%nat.
-by move/(_ j neji): diffi => ->.
+by move/(_ j' nej'j): diffi => ->.
 Qed.
 
-Definition value_per_click_is_bid (bs : bids) (i l : A) := 
-  [forall o : O, per_click l (bidding bs i o) == (value_per_click i)%:Q].
-
-Lemma VCGforSearch_stable_truthful (bs bs' : bids) (i l : A) 
-      (iwins : relabelled_i_in_oStar i l bs)
-      (iwins' : relabelled_i_in_oStar i l bs')
-      (iposrate : 0 < click_rate l) :
-  value_per_click_is_bid bs i l ->
-  differ_only_i i bs bs' ->
-  utility bs' i l <= utility bs i l.
+Lemma VCGforSearch_stable_truthful' (bs0' : bids) 
+      (iwins' : relabelled_i_in_oStar i i' bs0')
+      (iposrate : 0 < click_rate i') :
+  value_per_click_is_bid bs0 i i' ->
+  differ_only_i i' bs (bids_sort bs0').1 ->
+  utility iwins' <= utility iwins.
 Proof.
 move=> isvaluebid diff.   
-rewrite !eq_VCG_utility // /vcg_utility ler_nat. 
+rewrite !eq_VCG_utility // /vcg_utility ?ler_nat. 
 apply: VCG.truthful => o; last by exact: vcg_differ_only_i.
 move/eqfunP/(_ o): isvaluebid. 
 rewrite tnth_mktuple /per_click /value_bidding [X in bidding _ _ _ = X]ffunE.    
-rewrite (@eq_divr (value_per_click i)%:Q (click_rate l)) // => /eqP. 
+rewrite (@eq_divr (value_per_click i)%:Q (click_rate i')) // => /eqP. 
 rewrite -subr_eq0 -mulrBl mulrC mulrI_eq0 ?subr_eq0; 
   last by apply/lregP; rewrite lt0r_neq0 ?invr_gt0.
 rewrite -intrM => /eqP /(mulrIz _). 
 move/(_ (oner_neq0 _))=> /eqP.
-by rewrite -PoszM eqz_nat => /eqP.
+by rewrite -PoszM eqz_nat /bs => /eqP. 
 Qed.
 
-Lemma VCGforSearch_stable_truthful' (bs bs' : bids) (i l : A) 
-      (iwins : relabelled_i_in_oStar i l bs)
-      (iwins' : relabelled_i_in_oStar i l bs') :
-  value_per_click_is_bid bs i l ->
-  differ_only_i i bs bs' ->
-  utility bs' i l <= utility bs i l.
+Lemma VCGforSearch_stable_truthful (bs0' : bids) 
+      (iwins' : relabelled_i_in_oStar i i' bs0') :
+  value_per_click_is_bid bs0 i i' ->
+  differ_only_i i' bs (bids_sort bs0').1 ->
+  utility iwins' <= utility iwins.
 Proof.
-- have [] := boolP (0 < click_rate l).
-  exact: VCGforSearch_stable_truthful.
-- have: 0 <= click_rate l by exact: ler0z. 
+- have [] := boolP (0 < click_rate i').
+  exact: VCGforSearch_stable_truthful'.
+- have: 0 <= click_rate i' by exact: ler0z. 
   rewrite /utility le0r => /orP [/eqP -> |/negbF -> //].
   by rewrite !mulr0.
 Qed.
 
-Conjecture VCGforSearch_truthful : forall (bs bs' : bids) (i l l' : A) 
-      (iwins : relabelled_i_in_oStar i l bs)
-      (iwins' : relabelled_i_in_oStar i l' bs'),
-  value_per_click_is_bid bs i l ->
-  differ_only_i i bs bs' ->
-  utility_per_click bs' i l' * click_rate l' <= utility_per_click bs i l * click_rate l.
+Conjecture VCGforSearch_truthful : forall (bs0 bs0' : bids) (i l l' : A) 
+      (iwins : relabelled_i_in_oStar i l bs0)
+      (iwins' : relabelled_i_in_oStar i l' bs0'),
+  value_per_click_is_bid bs0 i l ->
+  differ_only_i i bs (bids_sort bs0').1 ->
+  utility iwins' <= utility iwins.
+
+End VCGProperties.
 
 Print Assumptions VCGforSearch_stable_truthful.

@@ -6,7 +6,7 @@ See the technical report [Towards a Generic CoQ Proof of the Truthfulness of Vic
 
 ## Usage
 
-Start with the VCG_Search_as_General_VCG.v` file to run the whole project. Otherwise, add the commented out `Require` at the start of the 
+Start with the `VCG_Search_as_General_VCG.v` file to run the whole project. Otherwise, add the commented out `Require` at the start of the 
 `General_VCG_mechanism.v` file, if you only want to run this one.
 
 This formalization has been tested using the following running environment on MacOS :

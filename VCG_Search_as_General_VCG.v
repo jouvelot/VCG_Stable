@@ -1769,15 +1769,18 @@ Qed.
 
 Variable labelling_of : bids -> labelling.
 
-Definition is_labelling (bs bs' : bids) ls' := 
-  [forall j' : A, tnth bs' j' == tnth bs (tnth ls' j')].
-
 Lemma sort_tupleP T n r (t : n.-tuple T): size (sort r t) == n.
 Proof. by rewrite size_sort size_tuple. Qed.
 Canonical sort_tuple T n r t := Tuple (@sort_tupleP T n r t).
 
 Definition bids_sort (bs : bids) : bids * labelling := 
   ([tuple of sort geq_bid bs], labelling_of bs).
+
+Definition is_labelling (bs bs' : bids) ls' := 
+  [forall j' : A, tnth bs' j' == tnth bs (tnth ls' j')].
+
+Hypothesis labelling_spec : forall bs bs' ls',
+    bids_sort bs = (bs', ls') -> is_labelling bs bs' ls'.
 
 Hypothesis labelling_stable_spec : forall bs, sorted_bids bs -> labelling_of bs = labelling_id.
 

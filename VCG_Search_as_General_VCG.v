@@ -772,6 +772,9 @@ have max_oStar (o : O) : predT o → geq (bidSum oStar) (bidSum o).
 exact: ExtremumSpec.
 Qed.
 
+Conjecture uniq_max_bidSum : uniq bs -> singleton max_bidSum_spec.
+Hypothesis max_bidSum_singleton : singleton max_bidSum_spec.
+
 Definition bid_ctr_slot s := 'bid_(slot_as_agent s) * 'ctr_s.
 Definition bid_ctr_agent j := 'bid_j * 'ctr_(slot_of j oStar).
 
@@ -881,8 +884,6 @@ Variable (bs0 : bids).
 Hypothesis sorted_bs0 : sorted_bids bs0.
 
 Definition bs := bs0.
-
-Conjecture uniq_max_bidSum : uniq bs -> singleton (max_bidSum_spec bs).
 
 Hypothesis max_bidSum_singleton : singleton (max_bidSum_spec bs).
 
@@ -1726,7 +1727,7 @@ Qed.
 
 End VCGforSearchPrice.
 
-(* Handle possible relabelling to use eq_sorted_VCG_price. *)
+(* Handle relabelling to use eq_sorted_VCG_price. *)
 
 Definition geq_bid (b1 b2 : bid) := b1 >= b2.
 
@@ -1777,8 +1778,7 @@ Canonical sort_tuple T n r t := Tuple (@sort_tupleP T n r t).
 
 Definition bids_sort (bs : bids) := ([tuple of sort geq_bid bs], labelling_of bs).
 
-Hypothesis labelling_spec : 
-  forall bs, sorted_bids bs -> bids_sort bs = (bs, labelling_id).
+Hypothesis labelling_spec : forall bs, sorted_bids bs -> bids_sort bs = (bs, labelling_id).
 
 Lemma bids_sort_spec bs0 bs ls :
   (bids_sort bs0 = (bs, ls) -> sorted_bids bs) /\
@@ -1828,7 +1828,8 @@ Variable (i i' : A).
 Definition relabelled_price (iwins : relabelled_i_in_oStar i i' bs0) := price sortedbs i'.
 
 Definition relabelled_vcg_price := vcg_price i' bs.
-Conjecture VCG_price_sorting_invariant : vcg_price i bs0 = vcg_price i' bs.
+
+Conjecture VCG_price_sorting_invariant : relabelled_vcg_price = vcg_price i bs0.
 
 Theorem eq_VCG_price (iwins : relabelled_i_in_oStar i i' bs0) :
   relabelled_price iwins = relabelled_vcg_price.
@@ -2012,11 +2013,11 @@ Proof.
   by rewrite !mulr0.
 Qed.
 
-Conjecture VCGforSearch_truthful : forall (bs0 bs0' : bids) (i l l' : A) 
-      (iwins : relabelled_i_in_oStar i l bs0)
-      (iwins' : relabelled_i_in_oStar i l' bs0'),
-  value_per_click_is_bid bs0 i l ->
-  differ_only_i i bs (bids_sort bs0').1 ->
+Conjecture VCGforSearch_truthful : forall (bs0' : bids) (i'': A) 
+      (iwins' : relabelled_i_in_oStar i i'' bs0')
+      (maxsingleton' : singleton (max_bidSum_spec (bids_sort bs0').1)),
+  value_per_click_is_bid bs0 i i' ->
+  differ_only_i i' bs (bids_sort bs0').1 ->
   utility iwins' <= utility iwins.
 
 End VCGProperties.

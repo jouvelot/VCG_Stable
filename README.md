@@ -1,6 +1,6 @@
 # VCG (with Stable Truthfulness)
 
-A Coq/SSReflect formalization project of the General Vickrey-Clarke-Groves (VCG) auction mechanism and VCG for Search auction algorithm, seen as an instance of the general mechnism. In addition, we provide proof of their important properties, namely No positive tranfer, Rationality and (partial, for now, since limited to _stable bid_ changes) Truthfulness.
+A Coq/SSReflect formalization project of the General Vickrey-Clarke-Groves (VCG) auction mechanism and VCG for Search auction algorithm, seen as an instance of the general mechnism. In addition, we provide proofs for important properties, namely No positive tranfer, Rationality and (partial, for now, since limited to _stable bid_ changes) Truthfulness.
 
 See the technical report [Towards a Generic CoQ Proof of the Truthfulness of Vickrey–Clarke–Groves Auctions for Search - Short Paper -](report.pdf) in this repository (it's is a bit outdated, and code has been somewhat updated) and also the file headers, for proper description.
 

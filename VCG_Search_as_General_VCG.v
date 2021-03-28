@@ -844,8 +844,6 @@ Proof. by rewrite (bigD1 i). Qed.
 
 End BidSum.
 
-Hypothesis max_bidSum_singleton : forall bs, singleton (max_bidSum_spec bs).
-
 (* VCG for Search, as a case of General VCG. *)
    
 Variable (n_bidders : nat).
@@ -883,6 +881,10 @@ Variable (bs0 : bids).
 Hypothesis sorted_bs0 : sorted_bids bs0.
 
 Definition bs := bs0.
+
+Conjecture uniq_max_bidSum : uniq bs -> singleton (max_bidSum_spec bs).
+
+Hypothesis max_bidSum_singleton : singleton (max_bidSum_spec bs).
 
 Lemma sorted_bs : sorted_bids bs.
 Proof. exact: sorted_bs0. Qed.
@@ -1819,6 +1821,8 @@ move: (@bids_sort_spec bs0 bs ls) => [].
 by rewrite {1}(surjective_pairing (bids_sort bs0)) => /(_ erefl).
 Qed.
 
+Hypothesis max_bidSum_singleton : singleton (max_bidSum_spec bs).
+
 Variable (i i' : A).
 
 Definition relabelled_price (iwins : relabelled_i_in_oStar i i' bs0) := price sortedbs i'.
@@ -1847,6 +1851,8 @@ Variable (i i' : A) (iwins : relabelled_i_in_oStar i i' bs0).
 
 Let bs := (bids_sort bs0).1.
 
+Hypothesis max_bidSum_singleton : singleton (max_bidSum_spec bs).
+
 Theorem no_positive_transfer : (* 0 <= externality *) 
   forall (s : slot), 'ctr_s <= 'ctr_(slot_pred s).
 Proof. move=> s; apply: sorted_ctrs. exact: leq_pred. Qed.
@@ -1871,7 +1877,7 @@ Theorem rational (value_bs : value_is_bid_for_bids) :
   relabelled_price iwins  <= value.
 Proof.
 have ltik: i' < k by apply: (lt_relabelled_k iwins).
-rewrite (eq_VCG_price iwins) // /relabelled_vcg_price.
+rewrite (eq_VCG_price max_bidSum_singleton iwins) // /relabelled_vcg_price.
 move: (@VCG.rational _ o0 i' (biddings bs) (tnth (biddings bs) i') erefl).
 by rewrite -bid_in_oStar ?tnth_mktuple.
 Qed.
@@ -1903,6 +1909,8 @@ Variable (bs0' : bids) (j l : A) (jwins : relabelled_i_in_oStar j l bs0').
 
 Let bs' := (bids_sort bs0').1.
 
+Hypothesis max_bidSum_singleton' : singleton (max_bidSum_spec bs').
+
 Definition click_rate := ('ctr_(sOi l))%:Q.
 
 Definition per_click (n : nat) := n%:Q / click_rate.
@@ -1933,20 +1941,20 @@ rewrite /utility /utility_per_click.
   rewrite le_NQ in ltbid.
   rewrite max_r ?mul0r //.  
   move: ltbid; rewrite ffunE subr_le0 PoszM intrM /price_per_click.
-  rewrite (eq_VCG_price jwins) /relabelled_vcg_price /vcg_price /per_click //.
-  by rewrite -ler_pdivl_mulr.
+  rewrite (eq_VCG_price max_bidSum_singleton' jwins).
+  by rewrite /relabelled_vcg_price /vcg_price /per_click // -ler_pdivl_mulr.
 - rewrite -ltnNge in ltbid. 
   rewrite max_l 1?mulrBl; last first.
   move: (ltnW ltbid); rewrite -lez_nat subr_ge0 ffunE PoszM.
-  move: (eq_VCG_price jwins).
+  move: (eq_VCG_price max_bidSum_singleton' jwins).
   rewrite /relabelled_vcg_price /vcg_price => <-.
   by rewrite ler_pdivr_mulr // -intrM ler_int.
   move: (ltbid); rewrite -ltz_nat -subzn; last by exact: ltnW ltbid.
   rewrite intrD => ltrbid.
   congr (_ + _).
   by rewrite ffunE PoszM intrM.
-  rewrite /price_per_click /per_click (eq_VCG_price jwins) /relabelled_vcg_price /vcg_price //.
-  rewrite -mulrA mulVf; last by rewrite lt0r_neq0.
+  rewrite /price_per_click /per_click (eq_VCG_price max_bidSum_singleton' jwins).
+  rewrite /relabelled_vcg_price /vcg_price // -mulrA mulVf; last by rewrite lt0r_neq0.
   by rewrite mulr1 mulrNz.
 Qed.
 
@@ -1970,6 +1978,7 @@ Qed.
 
 Lemma VCGforSearch_stable_truthful' (bs0' : bids) 
       (iwins' : relabelled_i_in_oStar i i' bs0')
+      (maxsingleton' : singleton (max_bidSum_spec (bids_sort bs0').1))
       (iposrate : 0 < click_rate i') :
   value_per_click_is_bid bs0 i i' ->
   differ_only_i i' bs (bids_sort bs0').1 ->
@@ -1986,10 +1995,12 @@ rewrite -subr_eq0 -mulrBl mulrC mulrI_eq0 ?subr_eq0;
 rewrite -intrM => /eqP /(mulrIz _). 
 move/(_ (oner_neq0 _))=> /eqP.
 by rewrite -PoszM eqz_nat /bs => /eqP. 
+
 Qed.
 
 Lemma VCGforSearch_stable_truthful (bs0' : bids) 
-      (iwins' : relabelled_i_in_oStar i i' bs0') :
+      (iwins' : relabelled_i_in_oStar i i' bs0') 
+      (maxsingleton' : singleton (max_bidSum_spec (bids_sort bs0').1)) :
   value_per_click_is_bid bs0 i i' ->
   differ_only_i i' bs (bids_sort bs0').1 ->
   utility iwins' <= utility iwins.
@@ -2011,3 +2022,4 @@ Conjecture VCGforSearch_truthful : forall (bs0 bs0' : bids) (i l l' : A)
 End VCGProperties.
 
 Print Assumptions VCGforSearch_stable_truthful.
+

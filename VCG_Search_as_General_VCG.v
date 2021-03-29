@@ -1769,8 +1769,11 @@ Qed.
 
 Variable sort_labelling : bids -> labelling.
 
+Definition down_sorted_bids (bs : bids) := 
+  [forall j1 : A, forall j2 : A, (j1 <= j2) ==> (tnth bs j2 <= tnth bs j1)].
+
 Definition labelling_of (bs : bids) :=
-  if [forall j1 : A, forall j2 : A, (j1 <= j2) ==> (tnth bs j2 <= tnth bs j1)] then
+  if down_sorted_bids bs then
     labelling_id
   else
     sort_labelling bs.

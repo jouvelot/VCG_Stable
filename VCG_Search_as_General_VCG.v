@@ -425,7 +425,7 @@ Definition externality (s : slot) :=
   let j := slot_as_agent s in
   'bid_j * ('ctr_(slot_pred s) - ('ctr_s)).
 
-Definition price (sortedbs : sorted_bids bs) (i : A) := 
+Definition price (i : A) := 
   if i < k then \sum_(s < k | i.+1 <= s) externality s else 0.
 
 End VCGforSearchAlgorithm.
@@ -1672,7 +1672,7 @@ Qed.
 Definition vcg_price := @VCG.price [finType of O] o0 i (biddings bs).
 
 Lemma eq_sorted_VCG_price : 
-  i < k -> price sorted_bs0 i = vcg_price.
+  i < k -> price bs i = vcg_price.
 Proof.
 move=> ltik.
 rewrite /vcg_price /price /externality VCG.eq_price'' /VCG.price''.
@@ -1850,21 +1850,24 @@ Qed.
 
 Hypothesis uniq_oStar : singleton (max_bidSum_spec bs).
 
-Variable (i i' : A).
+Variable (i i' : A) (iwins : relabelled_i_in_oStar i i' bs0).
 
-Definition relabelled_price (iwins : relabelled_i_in_oStar i i' bs0) := price sortedbs i'.
+Definition relabelled_price := price bs i'.
 
 Definition relabelled_vcg_price := vcg_price i' bs.
 
 Conjecture VCG_price_sorting_invariant : relabelled_vcg_price = vcg_price i bs0.
 
-Theorem eq_VCG_price (iwins : relabelled_i_in_oStar i i' bs0) :
-  relabelled_price iwins = relabelled_vcg_price.
+Theorem eq_VCG_price :
+  relabelled_price = relabelled_vcg_price.
 Proof.
 have lti'k := lt_relabelled_k iwins.
 move: iwins => [bs' [ls']] [bidssortbs [iasi' [iino]]]. 
 rewrite /relabelled_price /relabelled_vcg_price.
-exact: eq_sorted_VCG_price.
+apply: eq_sorted_VCG_price => //=.
+apply: (iffRL (sorted_bids_sorted bs)).
+apply: sort_sorted.
+exact: total_geq_bid.
 Qed.
 
 End UnsortedVCG.
@@ -1902,7 +1905,7 @@ by rewrite ifT.
 Qed.
 
 Theorem rational (value_bs : value_is_bid_for_bids) :
-  relabelled_price iwins  <= value.
+  relabelled_price bs0 i'  <= value.
 Proof.
 have ltik: i' < k by apply: (lt_relabelled_k iwins).
 rewrite (eq_VCG_price uniq_oStar iwins) // /relabelled_vcg_price.
@@ -1943,7 +1946,7 @@ Definition click_rate := ('ctr_(sOi l))%:Q.
 
 Definition per_click (n : nat) := n%:Q / click_rate.
 
-Definition price_per_click := per_click (relabelled_price jwins).
+Definition price_per_click := per_click (relabelled_price bs0' l).
 
 Definition utility_per_click :=
   (* max needed since VCG.utility is a nat. *)
@@ -2006,11 +2009,11 @@ by move/(_ j' nej'j): diffi => ->.
 Qed.
 
 Lemma VCGforSearch_stable_truthful (bs0' : bids) 
-      (iwins' : relabelled_i_in_oStar i i' bs0') 
+      (iwins' : relabelled_i_in_oStar i i' bs0')
       (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0'))) :
   value_per_click_is_bid bs0 i i' ->
   differ_only_i i' bs (tsort bs0') ->
-  utility iwins' <= utility iwins.
+  utility bs0' i i' <= utility bs0 i i'.
 Proof.
 move=> isvaluebid diff.   
 - have [] := boolP (0 < click_rate i') => iposrate.
@@ -2035,7 +2038,7 @@ Conjecture VCGforSearch_truthful : forall (bs0' : bids) (i'': A)
       (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0'))),
   value_per_click_is_bid bs0 i i' ->
   differ_only_i i' bs (tsort bs0') ->
-  utility iwins' <= utility iwins.
+  utility bs0' i i'' <= utility bs0 i i'.
 
 End VCGProperties.
 

@@ -1767,13 +1767,13 @@ split=> sortedbs.
   exact: jin.
 Qed.
 
-Variable default_labelling_of : labelling.
+Variable sort_labelling : bids -> labelling.
 
 Definition labelling_of (bs : bids) :=
-  if [forall j1 : A, [forall j2 : A, (j1 <= j2) ==> (tnth bs j2 <= tnth bs j1)]] then
+  if [forall j1 : A, forall j2 : A, (j1 <= j2) ==> (tnth bs j2 <= tnth bs j1)] then
     labelling_id
   else
-    default_labelling_of.
+    sort_labelling bs.
 
 Lemma sort_tupleP T n r (t : n.-tuple T): size (sort r t) == n.
 Proof. by rewrite size_sort size_tuple. Qed.
@@ -1786,10 +1786,8 @@ Definition bids_sort (bs : bids) : bids * labelling := (tsort bs, labelling_of b
 Definition is_labelling (bs bs' : bids) ls' := 
   [forall j' : A, tnth bs' j' == tnth bs (tnth ls' j')].
 
-(* Lemma labelling_spec bs bs' ls' :
+Hypothesis labelling_spec : forall bs bs' ls',
     bids_sort bs = (bs', ls') -> is_labelling bs bs' ls'.
-Proof.
-*)
 
 Lemma labelling_stable_spec bs : sorted_bids bs -> labelling_of bs = labelling_id.
 Proof.
@@ -1993,7 +1991,8 @@ End Utility.
 Definition value_per_click_is_bid (bs0' : bids) (j l : A) := 
   [forall o : O, per_click l (bidding (tsort bs0') l o) == (value_per_click j)%:Q].
 
-Definition differ_only_i j (bs bs' : bids) := forall (j' : A), j' != j -> tnth bs' j' = tnth bs j'.
+Definition differ_only_i j (bs bs' : bids) :=
+  forall (j' : A), j' != j -> tnth bs' j' = tnth bs j'.
 
 Lemma vcg_differ_only_i (j : A) (bs1 bs2 : bids)
       (diffi : differ_only_i j bs1 bs2) :
@@ -2006,28 +2005,6 @@ congr (if _ then (_ * _) else _)%nat.
 by move/(_ j' nej'j): diffi => ->.
 Qed.
 
-Lemma VCGforSearch_stable_truthful' (bs0' : bids) 
-      (iwins' : relabelled_i_in_oStar i i' bs0')
-      (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0')))
-      (iposrate : 0 < click_rate i') :
-  value_per_click_is_bid bs0 i i' ->
-  differ_only_i i' bs (tsort bs0') ->
-  utility iwins' <= utility iwins.
-Proof.
-move=> isvaluebid diff.   
-rewrite !eq_VCG_utility // /vcg_utility ?ler_nat. 
-apply: VCG.truthful => o; last by exact: vcg_differ_only_i.
-move/eqfunP/(_ o): isvaluebid. 
-rewrite tnth_mktuple /per_click /value_bidding [X in bidding _ _ _ = X]ffunE.    
-rewrite (@eq_divr (value_per_click i)%:Q (click_rate i')) // => /eqP. 
-rewrite -subr_eq0 -mulrBl mulrC mulrI_eq0 ?subr_eq0; 
-  last by apply/lregP; rewrite lt0r_neq0 ?invr_gt0.
-rewrite -intrM => /eqP /(mulrIz _). 
-move/(_ (oner_neq0 _))=> /eqP.
-by rewrite -PoszM eqz_nat /bs => /eqP. 
-
-Qed.
-
 Lemma VCGforSearch_stable_truthful (bs0' : bids) 
       (iwins' : relabelled_i_in_oStar i i' bs0') 
       (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0'))) :
@@ -2035,11 +2012,22 @@ Lemma VCGforSearch_stable_truthful (bs0' : bids)
   differ_only_i i' bs (tsort bs0') ->
   utility iwins' <= utility iwins.
 Proof.
-- have [] := boolP (0 < click_rate i').
-  exact: VCGforSearch_stable_truthful'.
+move=> isvaluebid diff.   
+- have [] := boolP (0 < click_rate i') => iposrate.
+  rewrite !eq_VCG_utility // /vcg_utility ?ler_nat. 
+  apply: VCG.truthful => o; last by exact: vcg_differ_only_i.
+  move/eqfunP/(_ o): isvaluebid. 
+  rewrite tnth_mktuple /per_click /value_bidding [X in bidding _ _ _ = X]ffunE.    
+  rewrite (@eq_divr (value_per_click i)%:Q (click_rate i')) // => /eqP. 
+  rewrite -subr_eq0 -mulrBl mulrC mulrI_eq0 ?subr_eq0; 
+    last by apply/lregP; rewrite lt0r_neq0 ?invr_gt0.
+  rewrite -intrM => /eqP /(mulrIz _). 
+  move/(_ (oner_neq0 _))=> /eqP.
+    by rewrite -PoszM eqz_nat /bs => /eqP. 
 - have: 0 <= click_rate i' by exact: ler0z. 
-  rewrite /utility le0r => /orP [/eqP -> |/negbF -> //].
+  rewrite /utility le0r => /orP [/eqP -> |/negbF].
   by rewrite !mulr0.
+  by rewrite iposrate.
 Qed.
 
 Conjecture VCGforSearch_truthful : forall (bs0' : bids) (i'': A) 

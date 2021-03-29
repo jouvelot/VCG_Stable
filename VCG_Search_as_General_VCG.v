@@ -1767,22 +1767,38 @@ split=> sortedbs.
   exact: jin.
 Qed.
 
-Variable labelling_of : bids -> labelling.
+Variable default_labelling_of : labelling.
+
+Definition labelling_of (bs : bids) :=
+  if [forall j1 : A, [forall j2 : A, (j1 <= j2) ==> (tnth bs j2 <= tnth bs j1)]] then
+    labelling_id
+  else
+    default_labelling_of.
 
 Lemma sort_tupleP T n r (t : n.-tuple T): size (sort r t) == n.
 Proof. by rewrite size_sort size_tuple. Qed.
 Canonical sort_tuple T n r t := Tuple (@sort_tupleP T n r t).
 
-Definition bids_sort (bs : bids) : bids * labelling := 
-  ([tuple of sort geq_bid bs], labelling_of bs).
+Definition tsort (bs : bids) := [tuple of sort geq_bid bs].
+
+Definition bids_sort (bs : bids) : bids * labelling := (tsort bs, labelling_of bs).
 
 Definition is_labelling (bs bs' : bids) ls' := 
   [forall j' : A, tnth bs' j' == tnth bs (tnth ls' j')].
 
-Hypothesis labelling_spec : forall bs bs' ls',
+(* Lemma labelling_spec bs bs' ls' :
     bids_sort bs = (bs', ls') -> is_labelling bs bs' ls'.
+Proof.
+*)
 
-Hypothesis labelling_stable_spec : forall bs, sorted_bids bs -> labelling_of bs = labelling_id.
+Lemma labelling_stable_spec bs : sorted_bids bs -> labelling_of bs = labelling_id.
+Proof.
+move=> sortedbs.
+rewrite /labelling_of ifT //.
+apply/forallP => j1.
+apply/forallP => j2.
+by move/implyP: (sortedbs j1 j2).
+Qed.
 
 Lemma bids_sort_spec bs0 bs ls :
   (bids_sort bs0 = (bs, ls) -> sorted_bids bs) /\
@@ -1795,7 +1811,7 @@ Proof.
   rewrite -isbs sort_sorted //.
   exact: total_geq_bid.
 - rewrite /bids_sort => sortedbs0. 
-  have -> : [tuple of sort geq_bid bs0] = bs0.
+  have -> : tsort bs0 = bs0.
     apply: val_inj => /=.
     apply: (eq_sorted transitive_geq_bid anti_geq_bid). 
     apply: sort_sorted.
@@ -1825,7 +1841,7 @@ Section UnsortedVCG.
 
 Variable (bs0 : bids).
 
-Let bs := (bids_sort bs0).1.
+Let bs := tsort bs0.
 Let ls := (bids_sort bs0).2.
 
 Lemma sortedbs : sorted_bids bs. 
@@ -1863,7 +1879,7 @@ Variable bs0 : bids.
 
 Variable (i i' : A) (iwins : relabelled_i_in_oStar i i' bs0).
 
-Let bs := (bids_sort bs0).1.
+Let bs := tsort bs0.
 
 Hypothesis uniq_oStar : singleton (max_bidSum_spec bs).
 
@@ -1921,7 +1937,7 @@ Section Utility.
 
 Variable (bs0' : bids) (j l : A) (jwins : relabelled_i_in_oStar j l bs0').
 
-Let bs' := (bids_sort bs0').1.
+Let bs' := tsort bs0'.
 
 Hypothesis uniq_oStar' : singleton (max_bidSum_spec bs').
 
@@ -1975,7 +1991,7 @@ Qed.
 End Utility.
 
 Definition value_per_click_is_bid (bs0' : bids) (j l : A) := 
-  [forall o : O, per_click l (bidding (bids_sort bs0').1 l o) == (value_per_click j)%:Q].
+  [forall o : O, per_click l (bidding (tsort bs0') l o) == (value_per_click j)%:Q].
 
 Definition differ_only_i j (bs bs' : bids) := forall (j' : A), j' != j -> tnth bs' j' = tnth bs j'.
 
@@ -1992,10 +2008,10 @@ Qed.
 
 Lemma VCGforSearch_stable_truthful' (bs0' : bids) 
       (iwins' : relabelled_i_in_oStar i i' bs0')
-      (uniq_oStar' : singleton (max_bidSum_spec (bids_sort bs0').1))
+      (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0')))
       (iposrate : 0 < click_rate i') :
   value_per_click_is_bid bs0 i i' ->
-  differ_only_i i' bs (bids_sort bs0').1 ->
+  differ_only_i i' bs (tsort bs0') ->
   utility iwins' <= utility iwins.
 Proof.
 move=> isvaluebid diff.   
@@ -2014,9 +2030,9 @@ Qed.
 
 Lemma VCGforSearch_stable_truthful (bs0' : bids) 
       (iwins' : relabelled_i_in_oStar i i' bs0') 
-      (uniq_oStar' : singleton (max_bidSum_spec (bids_sort bs0').1)) :
+      (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0'))) :
   value_per_click_is_bid bs0 i i' ->
-  differ_only_i i' bs (bids_sort bs0').1 ->
+  differ_only_i i' bs (tsort bs0') ->
   utility iwins' <= utility iwins.
 Proof.
 - have [] := boolP (0 < click_rate i').
@@ -2028,12 +2044,13 @@ Qed.
 
 Conjecture VCGforSearch_truthful : forall (bs0' : bids) (i'': A) 
       (iwins' : relabelled_i_in_oStar i i'' bs0')
-      (uniq_oStar' : singleton (max_bidSum_spec (bids_sort bs0').1)),
+      (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0'))),
   value_per_click_is_bid bs0 i i' ->
-  differ_only_i i' bs (bids_sort bs0').1 ->
+  differ_only_i i' bs (tsort bs0') ->
   utility iwins' <= utility iwins.
 
 End VCGProperties.
 
 Print Assumptions VCGforSearch_stable_truthful.
+Check VCGforSearch_stable_truthful.
 

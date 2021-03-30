@@ -404,7 +404,7 @@ Definition bids := n.-tuple bid.
 Definition sorted_bids (bs : bids) := sorted_tuple bs.
 
 (* VCG for Search algorithm, assuming bids are downsorted. *)
-(* Labellings are used to map sorted agents to initial agents. *)
+(* Labellings are used to map sorted agents to initial agents (see SortLabelling section). *)
 
 Definition labelling := n.-tuple A. 
 
@@ -1727,7 +1727,24 @@ Qed.
 
 End VCGforSearchPrice.
 
-(* Handle relabelling to use eq_sorted_VCG_price. *)
+(* Relabellings are needed to use eq_sorted_VCG_price. *)
+(* We don't fully specify here this sorting-related phase. *)
+
+Variable sort_labelling : bids -> labelling.
+
+Section SortLabelling.
+
+Definition labelling_of (bs : bids) :=
+  let sortedbs := [forall j1 : A, forall j2 : A, (j1 <= j2) ==> (tnth bs j2 <= tnth bs j1)] in
+  if sortedbs then
+    labelling_id
+  else
+    sort_labelling bs.
+
+Definition is_labelling (bs bs' : bids) ls' := 
+  [forall j' : A, tnth bs' j' == tnth bs (tnth ls' j')].
+
+End SortLabelling.
 
 Definition geq_bid (b1 b2 : bid) := b1 >= b2.
 
@@ -1767,17 +1784,6 @@ split=> sortedbs.
   exact: jin.
 Qed.
 
-Variable sort_labelling : bids -> labelling.
-
-Definition down_sorted_bids (bs : bids) := 
-  [forall j1 : A, forall j2 : A, (j1 <= j2) ==> (tnth bs j2 <= tnth bs j1)].
-
-Definition labelling_of (bs : bids) :=
-  if down_sorted_bids bs then
-    labelling_id
-  else
-    sort_labelling bs.
-
 Lemma sort_tupleP T n r (t : n.-tuple T): size (sort r t) == n.
 Proof. by rewrite size_sort size_tuple. Qed.
 Canonical sort_tuple T n r t := Tuple (@sort_tupleP T n r t).
@@ -1786,13 +1792,10 @@ Definition tsort (bs : bids) := [tuple of sort geq_bid bs].
 
 Definition bids_sort (bs : bids) : bids * labelling := (tsort bs, labelling_of bs).
 
-Definition is_labelling (bs bs' : bids) ls' := 
-  [forall j' : A, tnth bs' j' == tnth bs (tnth ls' j')].
-
-Hypothesis labelling_spec : forall bs bs' ls',
+Hypothesis sort_labelling_spec : forall bs bs' ls',
     bids_sort bs = (bs', ls') -> is_labelling bs bs' ls'.
 
-Lemma labelling_stable_spec bs : sorted_bids bs -> labelling_of bs = labelling_id.
+Lemma sort_labelling_stable bs : sorted_bids bs -> labelling_of bs = labelling_id.
 Proof.
 move=> sortedbs.
 rewrite /labelling_of ifT //.
@@ -1820,7 +1823,7 @@ Proof.
     apply: (iffLR (sorted_bids_sorted bs0)) => //.
     apply: permEl.
     exact: perm_sort.
-  by rewrite labelling_stable_spec.
+  by rewrite sort_labelling_stable.
 Qed.
 
 Definition relabelled_i_in_oStar i i' bs := exists bs' ls',

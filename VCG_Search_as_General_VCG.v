@@ -403,12 +403,13 @@ Definition bids := n.-tuple bid.
 
 Definition sorted_bids (bs : bids) := sorted_tuple bs.
 
-(* VCG for Search algorithm, assuming bids are downsorted. *)
 (* Labellings are used to map sorted agents to initial agents (see SortLabelling section). *)
 
 Definition labelling := n.-tuple A. 
 
 Definition labelling_id : labelling := ord_tuple n.
+
+(* VCG for Search algorithm, assuming bids are downsorted. *)
 
 Section VCGforSearchAlgorithm.
 
@@ -1997,15 +1998,15 @@ Qed.
 
 End Utility.
 
-Definition value_per_click_is_bid (bs0' : bids) (j l : A) := 
-  [forall o : O, per_click l (bidding (tsort bs0') l o) == (value_per_click j)%:Q].
+Definition value_per_click_is_bid := 
+  [forall o : O, per_click i' (bidding (tsort bs0) i' o) == (value_per_click i)%:Q].
 
-Definition differ_only_i j (bs bs' : bids) :=
-  forall (j' : A), j' != j -> tnth bs' j' = tnth bs j'.
+Definition differ_only_i (bs bs' : bids) :=
+  forall (j' : A), j' != i' -> tnth bs' j' = tnth bs j'.
 
-Lemma vcg_differ_only_i (j : A) (bs1 bs2 : bids)
-      (diffi : differ_only_i j bs1 bs2) :
-  VCG.differ_only_i j (biddings bs1) (biddings bs2).
+Lemma vcg_differ_only_i (bs1 bs2 : bids)
+      (diffi : differ_only_i bs1 bs2) :
+  VCG.differ_only_i i' (biddings bs1) (biddings bs2).
 Proof.
 move=> j' nej'j.
 apply/ffunP => o.
@@ -2017,8 +2018,8 @@ Qed.
 Lemma VCGforSearch_stable_truthful (bs0' : bids) 
       (iwins' : relabelled_i_in_oStar i i' bs0')
       (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0'))) :
-  value_per_click_is_bid bs0 i i' ->
-  differ_only_i i' bs (tsort bs0') ->
+  value_per_click_is_bid ->
+  differ_only_i  bs (tsort bs0') ->
   utility bs0' i i' <= utility bs0 i i'.
 Proof.
 move=> isvaluebid diff.   
@@ -2042,8 +2043,8 @@ Qed.
 Conjecture VCGforSearch_truthful : forall (bs0' : bids) (i'': A) 
       (iwins' : relabelled_i_in_oStar i i'' bs0')
       (uniq_oStar' : singleton (max_bidSum_spec (tsort bs0'))),
-  value_per_click_is_bid bs0 i i' ->
-  differ_only_i i' bs (tsort bs0') ->
+  value_per_click_is_bid ->
+  differ_only_i bs (tsort bs0') ->
   utility bs0' i i'' <= utility bs0 i i'.
 
 End VCGProperties.
